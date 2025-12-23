@@ -1,8 +1,10 @@
 package visitor;
 
+import ast.web.*;
+
 import antlr.WebTemplateParser;
 import antlr.WebTemplateParserBaseVisitor;
-import ast.web.*;
+
 import symbol_table.SymbolTable;
 
 public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNode> {
@@ -67,5 +69,67 @@ public SymbolTable symTab=new SymbolTable();
 //                ctx.JINJA_EXPR_CONTENT().getText(),
 //                ctx.start.getLine()
 //        );
+    }
+
+
+
+    @Override
+    public WebASTNode visitAttrNamedNode(WebTemplateParser.AttrNamedNodeContext ctx) {
+        String name = ctx.HTML_ATTR_NAME_KEY().getText();
+        String value = ctx.attrValue() != null
+                ? ctx.attrValue().getText()
+                : "";
+
+        return new AttributeNode(name, value, ctx.start.getLine());
+    }
+
+    @Override
+    public WebASTNode visitHtmlSelfCloseImgNode(
+            WebTemplateParser.HtmlSelfCloseImgNodeContext ctx) {
+
+        String tag = ctx.HTML_TAG_IMG_OPEN().getText();
+        HtmlSelfClosingNode node =
+                new HtmlSelfClosingNode(tag, ctx.start.getLine());
+
+        for (var attr : ctx.attribute()) {
+            WebASTNode attrNode = visit(attr);
+            if (attrNode != null) {
+                node.addChild(attrNode);
+            }
+        }
+
+        return node;
+    }
+
+    @Override
+    public WebASTNode visitJinjaIfNode(WebTemplateParser.JinjaIfNodeContext ctx) {
+        String condition = ctx.JINJA_STMT_CONTENT().getText();
+
+        JinjaIfNode node = new JinjaIfNode(condition, ctx.start.getLine());
+
+        for (var el : ctx.element()) {
+            WebASTNode child = visit(el);
+            if (child != null) {
+                node.addChild(child);
+            }
+        }
+
+        return node;
+    }
+
+    @Override
+    public WebASTNode visitJinjaForNode(WebTemplateParser.JinjaForNodeContext ctx) {
+        String expr = ctx.JINJA_STMT_CONTENT().getText();
+
+        JinjaForNode node = new JinjaForNode(expr, ctx.start.getLine());
+
+        for (var el : ctx.element()) {
+            WebASTNode child = visit(el);
+            if (child != null) {
+                node.addChild(child);
+            }
+        }
+
+        return node;
     }
 }

@@ -1,12 +1,16 @@
 package app;
-import antlr.pythonLexer;
-import antlr.pythonParser;
+
 import ast.paython.ASTNode;
 import ast.paython.ASTPrinter;
+
+import antlr.pythonLexer;
+import antlr.pythonParser;
+
 import org.antlr.v4.runtime.*;
 import visitor.PythonASTBuilderVisitor;
 
 import java.io.IOException;
+
 
 public class PythonMain {
 

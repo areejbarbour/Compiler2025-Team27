@@ -1,9 +1,13 @@
 package visitor;
+
+import ast.paython.*;
+
 import antlr.pythonParser;
 import antlr.pythonParserBaseVisitor;
-import ast.paython.*;
+
 import symbol_table.SymbolEntry;
 import symbol_table.SymbolTable;
+
 
 public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
