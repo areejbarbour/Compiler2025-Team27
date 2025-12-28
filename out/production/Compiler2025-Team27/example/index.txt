@@ -1,0 +1,33 @@
+<div class="container">
+
+<h1>قائمة المنتجات</h1>
+
+<button>إضافة منتج</button>
+
+{% for product in products %}
+
+<div class="product-card">
+
+<p></p>
+{{ product.name }}
+
+<p></p>
+{{ product.price }}
+
+<p></p>
+{{ product.details }}
+
+<button>عرض التفاصيل</button>
+
+</div>
+
+{% endfor %}
+
+<style>
+.product-card {
+    border: 1px;
+    padding: 10px;
+}
+</style>
+
+</div>
