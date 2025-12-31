@@ -1,7 +1,8 @@
-x = 5
+
 y = 10
 
-def add(a, b):
+
+def add(a, b,a):
     result = a
     if a > b:
         result = a
