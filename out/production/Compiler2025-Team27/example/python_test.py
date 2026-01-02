@@ -1,9 +1,10 @@
-
+x=1
 y = 10
+x=1
 
-
-def add(a, b,a):
+def add(a, b):
     result = a
+
     if a > b:
         result = a
     else:

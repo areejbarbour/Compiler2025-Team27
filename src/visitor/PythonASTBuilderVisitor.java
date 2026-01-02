@@ -26,8 +26,8 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     public ASTNode visitAssignmentStmt(pythonParser.AssignmentStmtContext ctx) {
         int line = ctx.start.getLine();
         String varName = ctx.assignment().ID().getText();
-        SymbolEntry entry = symTab.lookup(varName);
 
+        SymbolEntry entry = symTab.lookup(varName);
         if (entry == null) {
             entry = symTab.insert(varName);
             entry.setAttribute("kind", "variable");
@@ -142,8 +142,15 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     public ASTNode visitDefStmt(pythonParser.DefStmtContext ctx) {
         String name = ctx.defFunction().ID(0).getText();
 
-        symTab.insert(name).setAttribute("kind", "function");
-
+        SymbolEntry entry = symTab.lookup(name);
+        if (entry != null)
+        {
+            System.err.println("Error: symbol '" + name + "' function already defined"+ "' (line " + ctx.start.getLine() + ")");
+        }
+        if (entry == null) {
+            entry = symTab.insert(name);
+            entry.setAttribute("kind", "function");
+        }
         symTab.enterscope();
         for (int i = 1; i < ctx.defFunction().ID().size(); i++) {
             String paramName = ctx.defFunction().ID(i).getText();
@@ -155,7 +162,6 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
                 );
                 continue;
             }
-
             param.setAttribute("kind", "parameter");
         }
 

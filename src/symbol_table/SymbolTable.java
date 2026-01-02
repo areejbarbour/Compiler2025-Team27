@@ -28,12 +28,8 @@ public class SymbolTable {
     }
     public SymbolEntry insert(String name)
     {
-        SymbolEntry entry=scopes.peek().insert(name);
-        if(entry ==null)
-        {
-            System.err.println("Error: symbol '" + name + "' already defined");
-        }
-        return  entry;
+        return  scopes.peek().insert(name);
+
     }
     public SymbolEntry lookup(String name)
     {

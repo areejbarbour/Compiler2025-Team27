@@ -3,9 +3,10 @@ package visitor;
 import antlr.WebTemplateParser;
 import antlr.WebTemplateParserBaseVisitor;
 import ast.web.*;
+import symbol_table.SymbolTable;
 
 public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNode> {
-
+SymbolTable symTab=new SymbolTable();
     @Override
     public WebASTNode visitDocumentRootNode(
             WebTemplateParser.DocumentRootNodeContext ctx) {
@@ -51,9 +52,20 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
     @Override
     public WebASTNode visitJinjaExprNode(WebTemplateParser.JinjaExprNodeContext ctx) {
-        return new JinjaExprNode(
-                ctx.JINJA_EXPR_CONTENT().getText(),
-                ctx.start.getLine()
-        );
+        String name = ctx.JINJA_EXPR_CONTENT().getText();
+        int line = ctx.start.getLine();
+
+        if (symTab.lookup(name) == null) {
+            System.err.println(
+                    "Semantic Error: Jinja variable '" + name +
+                            "' not defined (line " + line + ")"
+            );
+        }
+
+        return new JinjaExprNode(name, line);
+//        return new JinjaExprNode(
+//                ctx.JINJA_EXPR_CONTENT().getText(),
+//                ctx.start.getLine()
+//        );
     }
 }
