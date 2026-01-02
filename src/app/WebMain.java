@@ -49,5 +49,8 @@ public class WebMain {
 
         System.out.println("\nAbstract Syntax Tree (Web AST):");
         astRoot.print("");
+
+        System.out.println("\n Symbol table:");
+        visitor.symTab.print();
     }
 }

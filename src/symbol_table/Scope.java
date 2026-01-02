@@ -35,6 +35,20 @@ public class Scope {
     {
         return parent;
     }
+    public void print() {
+        if (table.isEmpty()) {
+            System.out.println("Scope is empty");
+            return;
+        }
+
+        for (SymbolEntry entry : table.values()) {
+            System.out.println(
+                    "  " + entry.getName() +
+                            " | kind=" + entry.getAttribute("kind")
+            );
+        }
+    }
+
 
 
 

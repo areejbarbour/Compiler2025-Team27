@@ -48,6 +48,8 @@ public class PythonMain {
 
       System.out.println("\n Abstract Syntax Tree (AST)");
       ASTPrinter.printAST(astRoot);
+        System.out.println("\n Symbol table:");
+        visitor.symTab.print();
     }
     catch (IOException e) {
         e.printStackTrace();
