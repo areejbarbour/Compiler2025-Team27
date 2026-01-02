@@ -7,7 +7,7 @@ import symbol_table.SymbolTable;
 
 public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
-    SymbolTable symTab = new SymbolTable();
+    public SymbolTable symTab = new SymbolTable();
 
     @Override
     public ASTNode visitProg(pythonParser.ProgContext ctx) {
@@ -164,7 +164,6 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
             }
             param.setAttribute("kind", "parameter");
         }
-
 
         DefNode node = new DefNode(name, ctx.start.getLine());
         node.addChild(visit(ctx.defFunction().block()));

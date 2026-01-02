@@ -1,9 +1,13 @@
 package symbol_table;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 public class SymbolTable {
     private Stack<Scope>scopes=new Stack<>();;
+    private List<Scope> allScopes = new ArrayList<>();
+
     public SymbolTable()
     {
         enterscope();
@@ -16,12 +20,14 @@ public class SymbolTable {
     public void enterscope()
     {
         Scope parent = scopes.isEmpty() ? null : scopes.peek();
-        scopes.push(new Scope(parent));
+        Scope newScope=new Scope(parent);
+        scopes.push(newScope);
+        allScopes.add(newScope);
 
     }
     public void exitscope()
     {
-        if(scopes.size()>1)
+        if(!scopes.isEmpty())
         {
             scopes.pop();
         }
@@ -49,7 +55,15 @@ public class SymbolTable {
         return entry != null ? entry.getAttribute(key) : null;
     }
 
-
+    public void print() {
+        System.out.println("===== SYMBOL TABLE =====");
+        int level = 0;
+        for (Scope scope : allScopes) {
+            System.out.println("Scope level " + level + ":");
+            scope.print();
+            level++;
+        }
+    }
 
 
 }

@@ -6,7 +6,7 @@ import ast.web.*;
 import symbol_table.SymbolTable;
 
 public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNode> {
-SymbolTable symTab=new SymbolTable();
+public SymbolTable symTab=new SymbolTable();
     @Override
     public WebASTNode visitDocumentRootNode(
             WebTemplateParser.DocumentRootNodeContext ctx) {
