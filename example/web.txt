@@ -1,0 +1,53 @@
+<div id="product-page" class="container" data-role="page">
+
+    <h1>قائمة المنتجات</h1>
+
+    <!-- زر إضافة منتج -->
+    <button onclick="alert('إضافة منتج جديد')">إضافة منتج</button>
+
+    <!-- عرض المنتجات باستخدام Jinja -->
+    <div class="product-list">
+        {% for product in products %}
+        <div class="product-card">
+            <img src="{{ product.image }}" alt="{{ product.name }}" />
+            <h2>{{ product.name }}</h2>
+            <p>السعر: {{ product.price }} ريال</p>
+            <p>{{ product.details }}</p>
+            <!-- زر لعرض تفاصيل المنتج -->
+            <button onclick="alert('عرض تفاصيل {{ product.name }}')">عرض التفاصيل</button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- تفاصيل المنتج (يمكن عملها كـ modal أو صفحة منفصلة) -->
+    {% for product in products %}
+    <div class="product-detail" id="detail-{{ loop.index }}" style="display:none;">
+        <h2>{{ product.name }}</h2>
+        <img src="{{ product.image }}" alt="{{ product.name }}" />
+        <p>السعر: {{ product.price }} ريال</p>
+        <p>{{ product.details }}</p>
+        <button onclick="this.parentElement.style.display='none'">إغلاق</button>
+    </div>
+    {% endfor %}
+
+    <!-- CSS داخل الصفحة -->
+    <style>
+        #product-page { padding: 20px; font-family: Arial, sans-serif; }
+        .product-list { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+        .product-card { border: 1px solid #ccc; padding: 10px; width: 200px; }
+        .product-card img { width: 100%; height: auto; }
+        .product-card h2 { font-size: 18px; margin: 10px 0; }
+        .product-card p { margin: 5px 0; }
+        .product-card button { background-color: #007bff; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        .product-card button:hover { background-color: #0056b3; }
+
+        .product-detail {
+            border: 2px solid #007bff;
+            padding: 15px;
+            margin-top: 10px;
+            background-color: #f9f9f9;
+        }
+        .product-detail img { width: 100%; max-width: 300px; }
+    </style>
+
+</div>
