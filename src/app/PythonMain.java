@@ -1,10 +1,9 @@
 package app;
 
-import ast.paython.ASTNode;
-import ast.paython.ASTPrinter;
-
 import antlr.pythonLexer;
 import antlr.pythonParser;
+import ast.paython.ASTNode;
+import ast.paython.ASTPrinter;
 
 import org.antlr.v4.runtime.*;
 import visitor.PythonASTBuilderVisitor;
@@ -16,7 +15,7 @@ public class PythonMain {
 
     public static void main(String[] args) throws Exception {
     try{
-        String filePath = "example/python.py";
+        String filePath = "example/python.txt";
         CharStream input = CharStreams.fromFileName(filePath);
 
         pythonLexer lexer = new pythonLexer(input);

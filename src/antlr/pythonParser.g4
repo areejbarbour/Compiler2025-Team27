@@ -18,6 +18,7 @@ statement
 
 assignment
     : ID ASSIGN expr
+    | ID ASSIGN request
     ;
 
 block
@@ -86,6 +87,9 @@ loopStmt
     |statement
     | BREAK NEWLINE?
     ;
+
+request
+   :REQUEST DOT FORM DOT GET LPAREN STRING RPAREN;
 
 expr: DOUBLE                             #Double
      | INT                               #Integer

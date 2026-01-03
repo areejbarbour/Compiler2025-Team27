@@ -42,7 +42,7 @@ tokens {
     }
 }
 
-TRUE: 'true';
+TRUE: 'True';
 FALSE: 'false';
 NONE: 'None';
 CM: ',';
@@ -77,7 +77,9 @@ GE  : '>=';
 LE  : '<=';
 EQ  : '==';
 NE  : '!=';
-
+REQUEST : 'request';
+FORM:'form';
+GET:'get';
 
 ID : [a-zA-Z_][a-zA-Z_0-9]* ;
 STRING : '"' (~["\\] | ESC)* '"'
