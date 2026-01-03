@@ -61,10 +61,6 @@ public SymbolTable symTab=new SymbolTable();
         if (symTab.lookup(name) == null) {
             SymbolEntry entry = symTab.insert(name);
             entry.setAttribute("kind", "jinja-variable");
-//            System.err.println(
-//                    "Semantic Error: Jinja variable '" + name +
-//                            "' not defined (line " + line + ")"
-//            );
         }
 
         return new JinjaExprNode(name, line);
