@@ -16,7 +16,7 @@ public class PythonMain {
 
     public static void main(String[] args) throws Exception {
     try{
-        String filePath = "example/python_test.py";
+        String filePath = "example/python.py";
         CharStream input = CharStreams.fromFileName(filePath);
 
         pythonLexer lexer = new pythonLexer(input);

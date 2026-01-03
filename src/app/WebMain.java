@@ -13,7 +13,10 @@ public class WebMain {
 
     public static void main(String[] args) throws Exception {
 
-        String filePath = "example/web.txt";
+     String filePath = "example/web.html";
+      // String filePath = "example/add_product.html";
+      //  String filePath = "example/product_details.html";
+     //    String filePath = "example/products.html";
         CharStream input = CharStreams.fromFileName(filePath);
 
         WebTemplateLexer lexer = new WebTemplateLexer(input);

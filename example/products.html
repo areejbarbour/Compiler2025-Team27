@@ -1,0 +1,77 @@
+<div id="product-page" class="container" data-role="page">
+
+    <h1>قائمة المنتجات</h1>
+
+    <!-- زر إضافة منتج -->
+    <button onclick="alert('إضافة منتج جديد')">إضافة منتج</button>
+
+    <!-- عرض المنتجات باستخدام Jinja -->
+    <div class="product-list">
+        {% for product in products %}
+        <div class="product-card">
+            <img src="{{ product.image }}" alt="{{ product.name }}" />
+            <h2>{{ product.name }}</h2>
+            <p>السعر: {{ product.price }} دولار</p>
+            <p>{{ product.details }}</p>
+
+            <!-- عرض التفاصيل (بدون <a> وبدون url_for) -->
+            <button onclick="alert('عرض تفاصيل {{ product.name }}')">
+                عرض التفاصيل
+            </button>
+
+            <!-- حذف المنتج -->
+            <button onclick="alert('حذف المنتج {{ product.name }}')"
+                    style="background-color:red;">
+                حذف
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <style>
+        #product-page {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .product-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 200px;
+        }
+
+        .product-card img {
+            width: 100%;
+            height: auto;
+        }
+
+        .product-card h2 {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .product-card p {
+            margin: 5px 0;
+        }
+
+        .product-card button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .product-card button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+</div>

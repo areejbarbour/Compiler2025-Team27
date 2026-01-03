@@ -1,0 +1,11 @@
+<div class="product-detail" style="border:2px solid #007bff; padding:15px; margin-top:10px; background-color:#f9f9f9; font-family:Arial, sans-serif;">
+    {% if product %}
+    <h2>{{ product.name }}</h2>
+    <img src="{{ product.image }}" alt="{{ product.name }}" style="width:100%; max-width:300px;" />
+    <p>السعر: {{ product.price }} ريال</p>
+    <p>{{ product.details }}</p>
+    <button onclick="alert('إغلاق تفاصيل المنتج')">إغلاق</button>
+    {% else %}
+    <p>المنتج غير موجود.</p>
+    {% endif %}
+</div>
