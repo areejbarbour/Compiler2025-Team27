@@ -13,10 +13,6 @@ public class SymbolTable {
         enterscope();
     }
 
-    public void free()
-    {
-        scopes.clear();
-    }
     public void enterscope()
     {
         Scope parent = scopes.isEmpty() ? null : scopes.peek();

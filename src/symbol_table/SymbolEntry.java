@@ -23,9 +23,4 @@ public class SymbolEntry {
     public Object getAttribute(String key) {
         return attributes.get(key);
     }
-
-
-
-
-
 }
