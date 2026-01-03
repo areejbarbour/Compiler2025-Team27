@@ -45,8 +45,6 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
     @Override
     public ASTNode visitBlock(pythonParser.BlockContext ctx) {
-        symTab.enterscope();
-
         BlockNode block = new BlockNode(ctx.start.getLine());
         for (pythonParser.StatementContext stmt : ctx.statement()) {
             ASTNode child = visit(stmt);
@@ -54,9 +52,6 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
                 block.addChild(child);
             }
         }
-
-        symTab.exitscope();
-
         return block;
     }
 
@@ -112,10 +107,6 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         return new IdentifierNode(name, line);
 
-//        return new IdentifierNode(
-//                ctx.ID().getText(),
-//                ctx.start.getLine()
-//        );
     }
 
     @Override
