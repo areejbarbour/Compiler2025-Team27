@@ -176,5 +176,59 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         return node;
     }
+    @Override
+    public ASTNode visitWhileStmt(pythonParser.WhileStmtContext ctx) {
+
+        WhileNode node = new WhileNode(ctx.start.getLine());
+        node.addChild(visit(ctx.while_().condition()));
+        node.addChild(visit(ctx.while_().loopBlock()));
+
+        return node;
+    }
+
+    @Override
+    public ASTNode visitCallFunclabel(pythonParser.CallFunclabelContext ctx) {
+
+        String objectName = null;
+        String functionName;
+
+        if (ctx.callFunc().DOT() != null) {
+            objectName = ctx.callFunc().ID(0).getText();
+            functionName = ctx.callFunc().ID(1).getText();
+
+            if (symTab.lookup(objectName) == null) {
+                System.err.println(
+                        "Semantic Error: object '" + objectName +
+                                "' not defined (line " + ctx.start.getLine() + ")"
+                );
+            }
+
+        } else {
+            functionName = ctx.callFunc().ID(0).getText();
+        }
+
+        SymbolEntry funcEntry = symTab.lookup(functionName);
+        if (funcEntry == null || !"function".equals(funcEntry.getAttribute("kind")))
+        {
+            System.err.println(
+                    "Semantic Error: function '" + functionName +
+                            "' not defined (line " + ctx.start.getLine() + ")"
+            );
+        }
+
+        CallNode node = new CallNode(
+                objectName,
+                functionName,
+                ctx.start.getLine()
+        );
+
+        if (ctx.callFunc().args() != null) {
+            for (pythonParser.ArgsContext argCtx : ctx.callFunc().args()) {
+                node.addChild(visit(argCtx));
+            }
+        }
+
+        return node;
+    }
 
 }
