@@ -25,6 +25,10 @@ public SymbolTable symTab=new SymbolTable();
 
     @Override
     public WebASTNode visitTextContentNode(WebTemplateParser.TextContentNodeContext ctx) {
+        String text = ctx.getText().trim();
+        if (text.isEmpty()) {
+            return null;
+        }
         return new TextNode(ctx.getText(), ctx.start.getLine());
     }
 
