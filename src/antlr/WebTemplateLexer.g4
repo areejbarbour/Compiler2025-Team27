@@ -127,7 +127,6 @@ JSTMT_ENDIF   : 'endif' ;
 JSTMT_FOR     : 'for' WS_CHAR+ ;
 JSTMT_ENDFOR  : 'endfor' ;
 JSTMT_IN      : 'in' WS_CHAR+ ;
-
 JSTMT_END     : '%}' -> popMode ;
 JSTMT_WS      : WS_CHAR+ -> skip ;
 JINJA_STMT_CONTENT : (~('%'))+ ;
