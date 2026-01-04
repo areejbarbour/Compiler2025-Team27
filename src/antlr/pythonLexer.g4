@@ -11,21 +11,17 @@ tokens {
     {
         indentLevels.push(0);
     }
-
     @Override
     public void emit(Token t) {
        super.setToken(t);
         tokenQueue.add(t);
     }
-
     @Override
     public Token nextToken() {
         if (!tokenQueue.isEmpty()) {
             return tokenQueue.poll();
         }
-
         Token next = super.nextToken();
-
         if (next.getType() == EOF && !indentLevels.isEmpty() && indentLevels.peek() > 0) {
             while (indentLevels.size() > 1) {
                 emit(new CommonToken(DEDENT, "DEDENT"));
@@ -37,7 +33,6 @@ tokens {
         if (!tokenQueue.isEmpty()) {
             return tokenQueue.poll();
         }
-
         return next;
     }
 }
@@ -55,6 +50,8 @@ RPAREN  : ')';
 COL: ':';
 DOT:'.';
 AT:'@';
+APP:'app';
+ROUTE:'route';
 ASSIGN: '=';
 PLUS: '+';
 MINUS: '-';
@@ -66,8 +63,8 @@ RETURN : 'return';
 ELSE   : 'else';
 ELIF   : 'elif';
 BREAK:'break';
-AND:'&&';
-OR:'||';
+AND:'and';
+OR:'or';
 IS:'is';
 NOT:'not';
 IN:'in';

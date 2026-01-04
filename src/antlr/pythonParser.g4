@@ -36,7 +36,11 @@ callFunc: (ID DOT)? ID LPAREN (args (CM args)*)? RPAREN;
 defFunction:DEF ID LPAREN  (ID (CM ID)*)? RPAREN COL
             NEWLINE block;
 
-decorate:AT ID (DOT ID)* LPAREN (expr (CM expr)*)? RPAREN;
+//decorate:AT APP (DOT ID)* LPAREN (expr (CM expr)*)? RPAREN;
+decorate
+    : AT APP DOT ROUTE LPAREN (expr (CM expr)*)? RPAREN
+    ;
+
 
 return: RETURN (args (CM args)*)? ;
 
