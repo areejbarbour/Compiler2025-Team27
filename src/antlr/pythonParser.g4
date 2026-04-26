@@ -10,7 +10,7 @@ statement
     | defFunction NEWLINE?     #DefStmt
     | decorate NEWLINE?        #DecorateStmt
     | return NEWLINE?          #ReturnStmt
-    |importStatment NEWLINE?      #ImportStmt
+    |importStatement NEWLINE?      #ImportStmt
     | for NEWLINE?                     #ForStmt
     | if NEWLINE?                      #IfStmt
     | while NEWLINE?                   #WhileStmt
@@ -47,8 +47,8 @@ decorate
 return: RETURN (expr (CM expr)*)? ;
 
 args
-    : expr
-    | keywordArg
+    : expr   #argExprStmt
+    | keywordArg   #keywordArgStmt
 
     ;
 
@@ -56,9 +56,8 @@ keywordArg
     : ID ASSIGN expr
     ;
 
-importStatment
-        : IMPORT ID
-        | FROM ID IMPORT ID (CM ID)*
+importStatement
+        :  FROM ID IMPORT ID (CM ID)*
         ;
 if:IF condition COL NEWLINE block elif* else?;
 
