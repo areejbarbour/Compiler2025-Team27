@@ -5,20 +5,22 @@ prog : statement* EOF ;
 
 statement
     : assignment NEWLINE?      #AssignmentStmt
-    | callFunc NEWLINE?        #CallStmt
+  //  | callFunc NEWLINE?        #CallStmt
+    |expr NEWLINE?                   #ExprStmt
     | defFunction NEWLINE?     #DefStmt
     | decorate NEWLINE?        #DecorateStmt
     | return NEWLINE?          #ReturnStmt
-    | for                      #ForStmt
-    | if                       #IfStmt
-    | while                    #WhileStmt
+    |importStatment NEWLINE?      #ImportStmt
+    | for NEWLINE?                     #ForStmt
+    | if NEWLINE?                      #IfStmt
+    | while NEWLINE?                   #WhileStmt
     | NEWLINE                  #EmptyStmt
     ;
 
 
 assignment
     : ID ASSIGN expr
-    | ID ASSIGN request
+//    | ID ASSIGN request
     ;
 
 block
@@ -31,21 +33,33 @@ dict: LKB (keyValue (CM keyValue)*)? RKB ;
 
 keyValue: STRING COL expr;
 
-callFunc: (ID DOT)? ID LPAREN (args (CM args)*)? RPAREN;
+//callFunc: (ID DOT)? ID LPAREN (args (CM args)*)? RPAREN;
 
 defFunction:DEF ID LPAREN  (ID (CM ID)*)? RPAREN COL
             NEWLINE block;
 
 //decorate:AT APP (DOT ID)* LPAREN (expr (CM expr)*)? RPAREN;
 decorate
-    : AT APP DOT ROUTE LPAREN (expr (CM expr)*)? RPAREN
+    : AT ID DOT ID LPAREN (args  (CM args )*)? RPAREN
     ;
 
 
-return: RETURN (args (CM args)*)? ;
+return: RETURN (expr (CM expr)*)? ;
 
-args: expr | assignment;
+args
+    : expr
+    | keywordArg
 
+    ;
+
+keywordArg
+    : ID ASSIGN expr
+    ;
+
+importStatment
+        : IMPORT ID
+        | FROM ID IMPORT ID (CM ID)*
+        ;
 if:IF condition COL NEWLINE block elif* else?;
 
 elif:ELIF condition COL NEWLINE block ;
@@ -92,8 +106,8 @@ loopStmt
     | BREAK NEWLINE?
     ;
 
-request
-   :REQUEST DOT FORM DOT GET LPAREN STRING RPAREN;
+//request
+  // :REQUEST DOT FORM DOT GET LPAREN STRING RPAREN;
 
 expr: DOUBLE                             #Double
      | INT                               #Integer
@@ -105,7 +119,8 @@ expr: DOUBLE                             #Double
      | ID LSB expr RSB                   #IndexAccess
      | dict                              #dictValue
      | list                              #listValue
-     |callFunc                           #callFunclabel
+     | expr DOT ID                           #AttributeAccess
+     | expr LPAREN (args (CM args)*)? RPAREN #FunctionCall
      ;
 
 

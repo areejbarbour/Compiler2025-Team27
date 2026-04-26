@@ -1,6 +1,3 @@
-
-
-
 products =[{"name": "Laptop", "price": 1200, "details": "High performance laptop"},{"name": "Phone", "price": 700, "details": "Smartphone with good camera"},{"name": "Headphones", "price": 150, "details": "Noise-cancelling"}]
 
 @app.route("/products")

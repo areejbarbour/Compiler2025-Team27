@@ -50,8 +50,8 @@ RPAREN  : ')';
 COL: ':';
 DOT:'.';
 AT:'@';
-APP:'app';
-ROUTE:'route';
+//APP:'app';
+//ROUTE:'route';
 ASSIGN: '=';
 PLUS: '+';
 MINUS: '-';
@@ -74,9 +74,10 @@ GE  : '>=';
 LE  : '<=';
 EQ  : '==';
 NE  : '!=';
-REQUEST : 'request';
-FORM:'form';
-GET:'get';
+//REQUEST : 'request';
+FROM:'from';
+//GET:'get';
+IMPORT : 'import';
 
 ID : [a-zA-Z_][a-zA-Z_0-9]* ;
 STRING : '"' (~["\\] | ESC)* '"'

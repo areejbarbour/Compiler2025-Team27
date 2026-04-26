@@ -2,11 +2,9 @@ package app;
 
 import antlr.pythonLexer;
 import antlr.pythonParser;
-import ast.paython.ASTNode;
-import ast.paython.ASTPrinter;
 
 import org.antlr.v4.runtime.*;
-import visitor.PythonASTBuilderVisitor;
+//import visitor.PythonASTBuilderVisitor;
 
 import java.io.IOException;
 
@@ -15,7 +13,7 @@ public class PythonMain {
 
     public static void main(String[] args) throws Exception {
     try{
-        String filePath = "example/python.txt";
+        String filePath = "example/test.py";
         CharStream input = CharStreams.fromFileName(filePath);
 
         pythonLexer lexer = new pythonLexer(input);
@@ -46,13 +44,13 @@ public class PythonMain {
             System.err.println("\n failure of grammatical analysis");
             return;
         }
-        PythonASTBuilderVisitor visitor = new PythonASTBuilderVisitor();
-        ASTNode astRoot = visitor.visit(tree);
-
-      System.out.println("\n Abstract Syntax Tree (AST)");
-      ASTPrinter.printAST(astRoot);
-        System.out.println("\n Symbol table:");
-        visitor.symTab.print();
+//        PythonASTBuilderVisitor visitor = new PythonASTBuilderVisitor();
+//        ASTNode astRoot = visitor.visit(tree);
+//
+//      System.out.println("\n Abstract Syntax Tree (AST)");
+//      ASTPrinter.printAST(astRoot);
+//        System.out.println("\n Symbol table:");
+//        visitor.symTab.print();
     }
     catch (IOException e) {
         e.printStackTrace();
