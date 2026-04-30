@@ -1,132 +1,364 @@
 lexer grammar WebTemplateLexer;
 
-@header {
-  import org.antlr.v4.runtime.Token;
-}
-fragment LETTER  : [a-zA-Z_] ;
-fragment DIGIT   : [0-9] ;
-fragment WS_CHAR : [ \t\r\n] ;
+/* =========================================================
+   DEFAULT MODE
+========================================================= */
 
-JINJA_EXPR_START    : '{{' -> pushMode(JINJA_EXPR) ;
-JINJA_STMT_START    : '{%' -> pushMode(JINJA_STMT) ;
-JINJA_COMMENT_START : '{#' -> pushMode(JINJA_COMMENT) ;
+DOCTYPE
+    : '<!' [dD] [oO] [cC] [tT] [yY] [pP] [eE]
+      [ \t\r\n]+ [hH] [tT] [mM] [lL]
+      [ \t\r\n]* '>' -> skip
+    ;
 
-HTML_STYLE_OPEN
-    : '<' [sS][tT][yY][lL][eE] ( [ \t\r\n]+ [^>]* )? '>'
-      -> pushMode(CSS_MODE)
+HTML_COMMENT
+    : '<!--' .*? '-->' -> skip
+    ;
+
+JINJA_COMMENT_START
+    : '{#' -> pushMode(JINJA_COMMENT)
+    ;
+
+JINJA_EXPR_START
+    : '{{' -> pushMode(JINJA_EXPR)
+    ;
+
+JINJA_STMT_START
+    : '{%' -> pushMode(JINJA_STMT)
     ;
 
 
-HTML_TAG_IMG_OPEN    : '<' [iI][mM][gG] ( [ \t\r\n/>] )? -> pushMode(HTML_TAG_MODE) ;
-HTML_TAG_INPUT_OPEN  : '<' [iI][nN][pP][uU][tT] ( [ \t\r\n/>] )? -> pushMode(HTML_TAG_MODE) ;
+STYLE_OPEN
+    : '<style' -> pushMode(HTML_STYLE_OPEN_MODE)
+    ;
 
-HTML_TAG_DIV_OPEN      : '<' [dD][iI][vV] ( [ \t\r\n/>] )? -> pushMode(HTML_TAG_MODE) ;
-HTML_TAG_SPAN_OPEN     : '<' [sS][pP][aA][nN] ( [ \t\r\n/>] )? -> pushMode(HTML_TAG_MODE) ;
-HTML_TAG_P_OPEN        : '<' [pP] ( [ \t\r\n/>] )? -> pushMode(HTML_TAG_MODE) ;
-HTML_TAG_H1_OPEN       : '<' [hH][1] ( [ \t\r\n/>] )? -> pushMode(HTML_TAG_MODE) ;
-HTML_TAG_H2_OPEN       : '<' [hH][2] ( [ \t\r\n/>] )? -> pushMode(HTML_TAG_MODE) ;
-HTML_TAG_BUTTON_OPEN   : '<' [bB][uU][tT][tT][oO][nN] ( [ \t\r\n/>] )? -> pushMode(HTML_TAG_MODE) ;
 
-HTML_TAG_CLOSE        : '</' [a-zA-Z][a-zA-Z0-9-]* [ \t\r\n]* '>' ;
-HTML_SELF_CLOSING_TAG : '/>' ;
-HTML_TAG_END          : '>' ;
-HTML_ATTR_EQ          : '=' -> pushMode(HTML_ATTR_VALUE_MODE) ;
+HTML_CLOSE_TAG
+    : '</' [a-zA-Z][a-zA-Z0-9-]* [ \t\r\n]* '>'
+    ;
 
-HTML_ATTR_ID      : [iI][dD];
-HTML_ATTR_CLASS   : [cC][lL][aA][sS][sS];
-HTML_ATTR_SRC     : [sS][rR][cC];
-HTML_ATTR_HREF    : [hH][rR][eE][fF];
-HTML_ATTR_ALT     : [aA][lL][tT];
-HTML_ATTR_NAME    : [nN][aA][mM][eE];
-HTML_ATTR_VALUE   : [vV][aA][lL][uU][eE];
-HTML_ATTR_TITLE   : [tT][iI][tT][lL][eE];
-HTML_ATTR_STYLE   : [sS][tT][yY][lL][eE];
-HTML_ATTR_DATA    : 'data-' [a-zA-Z0-9_-]+ ;
 
-HTML_TEXT         : (~[{<])+ ;
-HTML_WS           : WS_CHAR+ -> skip ;
-HTML_COMMENT      : '<!--' .*? '-->' -> skip ;
+HTML_OPEN_TAG_START
+    : '<' -> pushMode(HTML_TAG_OPEN_MODE)
+    ;
+
+
+HTML_TEXT
+    : ~[<{]+
+    ;
+
+/* =========================================================
+   HTML TAG NAME MODE
+========================================================= */
+
+mode HTML_TAG_OPEN_MODE;
+
+
+VOID_TAG_NAME
+    : 'area'   { pushMode(HTML_TAG_MODE); }
+    | 'base'   { pushMode(HTML_TAG_MODE); }
+    | 'br'     { pushMode(HTML_TAG_MODE); }
+    | 'col'    { pushMode(HTML_TAG_MODE); }
+    | 'embed'  { pushMode(HTML_TAG_MODE); }
+    | 'hr'     { pushMode(HTML_TAG_MODE); }
+    | 'img'    { pushMode(HTML_TAG_MODE); }
+    | 'input'  { pushMode(HTML_TAG_MODE); }
+    | 'link'   { pushMode(HTML_TAG_MODE); }
+    | 'meta'   { pushMode(HTML_TAG_MODE); }
+    | 'param'  { pushMode(HTML_TAG_MODE); }
+    | 'source' { pushMode(HTML_TAG_MODE); }
+    | 'track'  { pushMode(HTML_TAG_MODE); }
+    | 'wbr'    { pushMode(HTML_TAG_MODE); }
+    ;
+
+TAG_OPEN_WS
+    : [ \t\r\n]+ -> skip
+    ;
+
+TAG_NAME
+    : [a-zA-Z][a-zA-Z0-9-]* -> pushMode(HTML_TAG_MODE)
+    ;
+
+/* =========================================================
+   HTML TAG BODY MODE
+========================================================= */
 
 mode HTML_TAG_MODE;
 
-TAG_WS             : WS_CHAR+ -> skip ;
-HTML_ATTR_NAME_KEY  : HTML_ATTR_ID | HTML_ATTR_CLASS | HTML_ATTR_SRC | HTML_ATTR_HREF
-                   | HTML_ATTR_ALT | HTML_ATTR_TITLE | HTML_ATTR_STYLE | HTML_ATTR_NAME
-                   | HTML_ATTR_DATA ;
-HTML_ATTR_EQ_MODE   : '=' -> pushMode(HTML_ATTR_VALUE_MODE) ;
-HTML_SELF_CLOSE     : '/>' -> popMode ;
-HTML_TAG_END_MODE   : '>' -> popMode ;
-HTML_TAG_TEXT       : ~[ \t\r\n>]+ ;
+TAG_WS
+    : [ \t\r\n]+ -> skip
+    ;
 
+TAG_ATTR_NAME
+    : [a-zA-Z_:][a-zA-Z0-9:._-]*
+    ;
+
+TAG_EQ
+    : '=' -> pushMode(HTML_ATTR_VALUE_MODE)
+    ;
+
+
+TAG_SELF_CLOSE
+    : '/>' -> popMode, popMode
+    ;
+
+TAG_END
+    : '>' -> popMode, popMode
+    ;
+
+/* =========================================================
+   HTML ATTRIBUTE VALUE MODE
+========================================================= */
 
 mode HTML_ATTR_VALUE_MODE;
 
-HTML_ATTR_VALUE_DOUBLE
-  : '"' ( '\\' . | ~["\\\r\n] )* '"' -> popMode ;
+ATTR_VALUE_DOUBLE
+    : '"' ( '\\' . | ~["\\\r\n] )* '"' -> popMode
+    ;
 
-HTML_ATTR_VALUE_SINGLE
-  : '\'' ( '\\' . | ~['\\\r\n] )* '\'' -> popMode ;
+ATTR_VALUE_SINGLE
+    : '\'' ( '\\' . | ~['\\\r\n] )* '\'' -> popMode
+    ;
 
-HTML_ATTR_VALUE_UNQUOTED
-  : [^ \t\r\n"'=<>`]+ -> popMode ;
+ATTR_VALUE_UNQUOTED
+    : ~[ \t\r\n"'=<>`]+ -> popMode
+    ;
 
+/* =========================================================
+   STYLE OPEN MODE
+========================================================= */
+
+mode HTML_STYLE_OPEN_MODE;
+
+STYLE_WS
+    : [ \t\r\n]+ -> skip
+    ;
+
+STYLE_ATTR_NAME
+    : [a-zA-Z_:][a-zA-Z0-9:._-]*
+    ;
+
+STYLE_EQ
+    : '=' -> pushMode(HTML_ATTR_VALUE_MODE)
+    ;
+
+STYLE_TAG_END
+    : '>' -> pushMode(CSS_MODE)
+    ;
+
+STYLE_SELF_CLOSE
+    : '/>' -> popMode
+    ;
+
+/* =========================================================
+   CSS MODE
+========================================================= */
 
 mode CSS_MODE;
 
-CSS_STYLE_CLOSE : '</' [sS][tT][yY][lL][eE] '>' -> popMode ;
+CSS_CLOSE
+    : '</style' [ \t\r\n]* '>' -> popMode, popMode
+    ;
 
-CSS_WS      : WS_CHAR+ -> skip ;
-CSS_COMMENT : '/*' .*? '*/' -> skip ;
+CSS_WS
+    : [ \t\r\n]+ -> skip
+    ;
 
-CSS_OPEN_BRACE    : '{' ;
-CSS_CLOSE_BRACE   : '}' ;
-CSS_COLON         : ':' ;
-CSS_SEMI          : ';' ;
-CSS_COMMA         : ',' ;
-CSS_PAREN_OPEN    : '(' ;
-CSS_PAREN_CLOSE   : ')' ;
-CSS_COMBINATOR    : '>' | '+' | '~' ;
+CSS_COMMENT
+    : '/*' .*? '*/' -> skip
+    ;
 
-CSS_SEL_ID              : '#' [a-zA-Z_][a-zA-Z0-9_-]* ;
-CSS_SEL_CLASS           : '.' [a-zA-Z_][a-zA-Z0-9_-]* ;
-CSS_ATTRIBUTE_SELECTOR  : '[' (~[\]] )* ']' ;
-CSS_PSEUDO              : ':' ':'? [a-zA-Z_][a-zA-Z0-9_-]* ;
-CSS_AT_RULE             : '@' [a-zA-Z_-]+ ;
+CSS_LBRACE   : '{' ;
+CSS_RBRACE   : '}' ;
+CSS_LPAREN   : '(' ;
+CSS_RPAREN   : ')' ;
+CSS_COLON    : ':' ;
+CSS_SEMI     : ';' ;
+CSS_COMMA    : ',' ;
+CSS_DOT      : '.' ;
+CSS_TILDE    : '~' ;
+CSS_PLUS     : '+' ;
+CSS_STAR     : '*' ;
+CSS_SLASH    : '/' ;
+CSS_BANG     : '!' ;
+CSS_LBRACKET : '[' ;
+CSS_RBRACKET : ']' ;
+CSS_GT       : '>' ;
+CSS_LT       : '<' ;
+CSS_EQ       : '=' ;
 
-CSS_NUMBER              : [0-9]+ ('.' [0-9]+)? ;
-CSS_PERCENTAGE          : [0-9]+ ('.' [0-9]+)? '%' ;
-CSS_DIMENSION           : [0-9]+ ('.' [0-9]+)? [a-zA-Z]+ ;
+CSS_HEX_COLOR
+    : '#' [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]
+      ( [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] )?
+    ;
 
-CSS_STRING_DOUBLE       : '"' ( '\\' . | ~["\\\r\n] )* '"' ;
-CSS_STRING_SINGLE       : '\'' ( '\\' . | ~['\\\r\n] )* '\'' ;
+CSS_HASH_IDENT
+    : '#' [a-zA-Z_-] [a-zA-Z0-9_-]*
+    ;
+
+CSS_AT_RULE
+    : '@' [a-zA-Z_-]+
+    ;
+
+CSS_NUMBER
+    : [0-9]+ ('.' [0-9]+)?
+    ;
+
+CSS_PERCENTAGE
+    : [0-9]+ ('.' [0-9]+)? '%'
+    ;
+
+CSS_DIMENSION
+    : [0-9]+ ('.' [0-9]+)? [a-zA-Z]+
+    ;
+
+CSS_STRING
+    : '"' ( '\\' . | ~["\\\r\n] )* '"'
+    | '\'' ( '\\' . | ~['\\\r\n] )* '\''
+    ;
 
 CSS_URL
-    : 'url' WS_CHAR* '(' WS_CHAR* (CSS_STRING_DOUBLE | CSS_STRING_SINGLE | (~[)\r\n])+ ) WS_CHAR* ')' ;
+    : 'url(' .*? ')'
+    ;
 
-CSS_FUNCTION : [a-zA-Z_-][a-zA-Z0-9_-]* '(' ;
+CSS_IDENT
+    : [a-zA-Z_-][a-zA-Z0-9_-]*
+    ;
 
-CSS_IDENT : [a-zA-Z_-][a-zA-Z0-9_-]* ;
-
-CSS_OTHER : . ;
+/* =========================================================
+   JINJA COMMENT MODE
+========================================================= */
 
 mode JINJA_COMMENT;
-JINJA_COMMENT_CONTENT : .*? '#}' -> popMode, skip ;
 
+JINJA_COMMENT_END
+    : '#}' -> popMode
+    ;
+
+JINJA_COMMENT_TEXT
+    : ~[#}]+
+    ;
+
+/* =========================================================
+   JINJA EXPRESSION MODE
+========================================================= */
 
 mode JINJA_EXPR;
-JEXPR_END             : '}}' -> popMode ;
-JEXPR_WS              : WS_CHAR+ -> skip ;
-JINJA_EXPR_CONTENT    : (~('}'))+ ;
+
+JINJA_EXPR_END
+    : '}}' -> popMode
+    ;
+
+JINJA_WS
+    : [ \t\r\n]+ -> skip
+    ;
+
+
+JINJA_NOT : 'not' ;
+JINJA_AND : 'and' ;
+JINJA_OR  : 'or' ;
+JINJA_IN  : 'in' ;
+JINJA_IS  : 'is' ;
+
+JINJA_NUMBER
+    : [0-9]+ ('.' [0-9]+)?
+    ;
+
+JINJA_STRING
+    : '"' ( '\\' . | ~["\\] )* '"'
+    | '\'' ( '\\' . | ~['\\] )* '\''
+    ;
+
+JINJA_IDENTIFIER
+    : [a-zA-Z_][a-zA-Z0-9_]*
+    ;
+
+JINJA_ASSIGNMENT
+    : '='
+    ;
+
+JINJA_PIPE     : '|' ;
+JINJA_DOT      : '.' ;
+JINJA_LPAREN   : '(' ;
+JINJA_RPAREN   : ')' ;
+JINJA_COMMA    : ',' ;
+JINJA_LBRACKET : '[' ;
+JINJA_RBRACKET : ']' ;
+
+JINJA_COMPARISON
+    : '==' | '!=' | '>=' | '<=' | '>' | '<'
+    ;
+
+JINJA_ADDITIVE
+    : '+' | '-'
+    ;
+
+JINJA_MULTIPLICATIVE
+    : '*' | '/' | '%'
+    ;
+
+/* =========================================================
+   JINJA STATEMENT MODE
+========================================================= */
 
 mode JINJA_STMT;
 
-JSTMT_IF      : 'if' WS_CHAR+ ;
-JSTMT_ELIF    : 'elif' WS_CHAR+ ;
-JSTMT_ELSE    : 'else' WS_CHAR* ;
-JSTMT_ENDIF   : 'endif' ;
-JSTMT_FOR     : 'for' WS_CHAR+ ;
-JSTMT_ENDFOR  : 'endfor' ;
-JSTMT_IN      : 'in' WS_CHAR+ ;
-JSTMT_END     : '%}' -> popMode ;
-JSTMT_WS      : WS_CHAR+ -> skip ;
-JINJA_STMT_CONTENT : (~('%'))+ ;
+JSTMT_END
+    : '%}' -> popMode
+    ;
+
+JSTMT_WS
+    : [ \t\r\n]+ -> skip
+    ;
+
+
+JSTMT_IF       : 'if' ;
+JSTMT_ELIF     : 'elif' ;
+JSTMT_ELSE     : 'else' ;
+JSTMT_FOR      : 'for' ;
+JSTMT_IN       : 'in' ;
+JSTMT_IS       : 'is' ;
+JSTMT_ENDIF    : 'endif' ;
+JSTMT_ENDFOR   : 'endfor' ;
+JSTMT_BLOCK    : 'block' ;
+JSTMT_ENDBLOCK : 'endblock' ;
+JSTMT_SET      : 'set' ;
+JSTMT_NOT      : 'not' ;
+JSTMT_AND      : 'and' ;
+JSTMT_OR       : 'or' ;
+
+JSTMT_IDENTIFIER
+    : [a-zA-Z_][a-zA-Z0-9_]*
+    ;
+
+JSTMT_NUMBER
+    : [0-9]+ ('.' [0-9]+)?
+    ;
+
+JSTMT_STRING
+    : '"' ( '\\' . | ~["\\] )* '"'
+    | '\'' ( '\\' . | ~['\\] )* '\''
+    ;
+
+JSTMT_PIPE     : '|' ;
+JSTMT_DOT      : '.' ;
+JSTMT_COMMA    : ',' ;
+JSTMT_LPAREN   : '(' ;
+JSTMT_RPAREN   : ')' ;
+JSTMT_LBRACKET : '[' ;
+JSTMT_RBRACKET : ']' ;
+
+JSTMT_COMPARISON
+    : '==' | '!=' | '>=' | '<=' | '>' | '<'
+    ;
+
+JSTMT_ASSIGNMENT
+    : '='
+    ;
+
+JSTMT_ADDITIVE
+    : '+' | '-'
+    ;
+
+JSTMT_MULTIPLICATIVE
+    : '*' | '/' | '%'
+    ;

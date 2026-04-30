@@ -6,7 +6,7 @@
         <PerGrammarGenerationSettings>
           <option name="fileName" value="$PROJECT_DIR$/src/antlr/WebTemplateLexer.g4" />
           <option name="autoGen" value="true" />
-          <option name="outputDir" value="C:\Users\LEGION\IdeaProjects\Compiler2025-Team27\src" />
+          <option name="outputDir" value="C:\Users\Laptop\IdeaProjects\Compiler2025-Team27\src" />
           <option name="libDir" value="" />
           <option name="encoding" value="" />
           <option name="pkg" value="" />
@@ -16,7 +16,7 @@
         <PerGrammarGenerationSettings>
           <option name="fileName" value="$PROJECT_DIR$/src/antlr/WebTemplateParser.g4" />
           <option name="autoGen" value="true" />
-          <option name="outputDir" value="C:\Users\LEGION\IdeaProjects\Compiler2025-Team27\src" />
+          <option name="outputDir" value="C:\Users\Laptop\IdeaProjects\Compiler2025-Team27\src" />
           <option name="libDir" value="" />
           <option name="encoding" value="" />
           <option name="pkg" value="" />
@@ -26,7 +26,7 @@
         <PerGrammarGenerationSettings>
           <option name="fileName" value="$PROJECT_DIR$/src/antlr/pythonParser.g4" />
           <option name="autoGen" value="true" />
-          <option name="outputDir" value="C:\Users\LEGION\IdeaProjects\Compiler2025-Team27\src" />
+          <option name="outputDir" value="C:\Users\Laptop\IdeaProjects\Compiler2025-Team27\src" />
           <option name="libDir" value="" />
           <option name="encoding" value="" />
           <option name="pkg" value="" />
@@ -36,7 +36,7 @@
         <PerGrammarGenerationSettings>
           <option name="fileName" value="$PROJECT_DIR$/src/antlr/pythonLexer.g4" />
           <option name="autoGen" value="true" />
-          <option name="outputDir" value="C:\Users\LEGION\IdeaProjects\Compiler2025-Team27\src" />
+          <option name="outputDir" value="C:\Users\Laptop\IdeaProjects\Compiler2025-Team27\src" />
           <option name="libDir" value="" />
           <option name="encoding" value="" />
           <option name="pkg" value="" />
@@ -45,6 +45,9 @@
         </PerGrammarGenerationSettings>
       </list>
     </option>
+  </component>
+  <component name="Black">
+    <option name="sdkName" value="Python 3.12" />
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_25" default="true" project-jdk-name="25 (2)" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />

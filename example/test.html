@@ -1,33 +1,64 @@
-<div id="product-page" class="container" data-role="page">
+<div id="product-page" class="test.html" data-role="page">
 
     <h1>قائمة المنتجات</h1>
 
     <!-- زر إضافة منتج -->
-    <button onclick="alert('إضافة منتج جديد')">إضافة منتج</button>
+    <button onclick="alert('add product')">
+        إضافة منتج
+    </button>
 
     <!-- عرض المنتجات باستخدام Jinja -->
     <div class="product-list">
+
         {% for product in products %}
+
         <div class="product-card">
             <img src="{{ product.image }}" alt="{{ product.name }}" />
+
             <h2>{{ product.name }}</h2>
-            <p>السعر: {{ product.price }} دولار</p>
+
+            <p>السعر: {{ product.price }} ليرة سورية</p>
+
             <p>{{ product.details }}</p>
 
-            <!-- عرض التفاصيل (بدون <a> وبدون url_for) -->
+            <!-- زر لعرض تفاصيل المنتج -->
             <button onclick="alert('عرض تفاصيل {{ product.name }}')">
                 عرض التفاصيل
             </button>
-
-            <!-- حذف المنتج -->
-            <button onclick="alert('حذف المنتج {{ product.name }}')"
-                    style="background-color:red;">
-                حذف
-            </button>
         </div>
+
         {% endfor %}
+
     </div>
 
+    <!-- تفاصيل المنتج -->
+    {% for product in products %}
+
+    <div class="product-detail" id="detail-{{ loop.index }}" style="display: none;">
+        <h2>{{ product.name }}</h2>
+
+        <img src="{{ product.image }}" alt="{{ product.name }}" />
+
+        <p>
+            السعر:
+            {{ product.price }}
+            {% if product.price > 1000 %}
+            <span>(غالي)</span>
+            {% else %}
+            <span>(رخيص)</span>
+            {% endif %}
+        </p>
+
+        <p>{{ product.details }}</p>
+
+        <button onclick="this.parentElement.style.display='none'">
+            إغلاق
+        </button>
+    </div>
+
+    {% endfor %}
+
+    <!-- CSS داخل الصفحة -->
     <style>
         #product-page {
             padding: 20px;
@@ -71,6 +102,18 @@
 
         .product-card button:hover {
             background-color: #0056b3;
+        }
+
+        .product-detail {
+            border: 2px solid #007bff;
+            padding: 15px;
+            margin-top: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .product-detail img {
+            width: 100%;
+            max-width: 300px;
         }
     </style>
 

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>تفاصيل المنتج</title>
+</head>
+<body>
+
+<h2>{{ product.name }}</h2>
+
+<img src="{{ product.image }}" style="width:200px;">
+
+<p>السعر: {{ product.price }}</p>
+<p>{{ product.details }}</p>
+
+<a href="{{ url_for('view_products') }}">
+    <button>رجوع</button>
+</a>
+
+</body>
+</html>
