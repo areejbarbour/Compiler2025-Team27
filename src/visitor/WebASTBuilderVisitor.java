@@ -58,10 +58,10 @@ public SymbolTable symTab=new SymbolTable();
         String name = ctx.JINJA_EXPR_CONTENT().getText();
         int line = ctx.start.getLine();
 
-        if (symTab.lookup(name) == null) {
-            SymbolEntry entry = symTab.insert(name);
-            entry.setAttribute("kind", "jinja-variable");
-        }
+//        if (symTab.lookup(name) == null) {
+//            SymbolEntry entry = symTab.insert(name);
+//            entry.setAttribute("kind", "jinja-variable");
+//        }
 
         return new JinjaExprNode(name, line);
     }
@@ -114,20 +114,20 @@ public SymbolTable symTab=new SymbolTable();
 
     @Override
     public WebASTNode visitJinjaForNode(WebTemplateParser.JinjaForNodeContext ctx) {
-        symTab.enterscope();
+       // symTab.enterscope();
         String expr = ctx.JINJA_STMT_CONTENT().getText();
+//
+//        String[] parts = expr.split("\\s+");
+//        String loopVar = parts[1];
+//        String iterable = parts[3];
 
-        String[] parts = expr.split("\\s+");
-        String loopVar = parts[1];
-        String iterable = parts[3];
+        //SymbolEntry loopEntry = symTab.insert(loopVar);
+       // loopEntry.setAttribute("kind", "loop-variable");
 
-        SymbolEntry loopEntry = symTab.insert(loopVar);
-        loopEntry.setAttribute("kind", "loop-variable");
-
-        if (symTab.lookup(iterable) == null) {
-            SymbolEntry iterableEntry = symTab.insert(iterable);
-            iterableEntry.setAttribute("kind", "collection");
-        }
+//        if (symTab.lookup(iterable) == null) {
+//           // SymbolEntry iterableEntry = symTab.insert(iterable);
+//           // iterableEntry.setAttribute("kind", "collection");
+//        }
 
         JinjaForNode node = new JinjaForNode(expr, ctx.start.getLine());
 
@@ -137,7 +137,7 @@ public SymbolTable symTab=new SymbolTable();
                 node.addChild(child);
             }
         }
-        symTab.exitscope();
+      //  symTab.exitscope();
         return node;
     }
 }

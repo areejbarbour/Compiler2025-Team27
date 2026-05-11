@@ -54,6 +54,8 @@ public class PythonMain {
       ASTPrinter.printAST(astRoot);
         System.out.println("\n Symbol table:");
         visitor.symTab.print();
+        visitor.printerror();
+
     }
     catch (IOException e) {
         e.printStackTrace();
