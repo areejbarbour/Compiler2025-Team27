@@ -3,7 +3,10 @@ package app;
 import antlr.pythonLexer;
 import antlr.pythonParser;
 
+import ast.paython.ASTNode;
+import ast.paython.ASTPrinter;
 import org.antlr.v4.runtime.*;
+import visitor.PythonASTBuilderVisitor;
 //import visitor.PythonASTBuilderVisitor;
 
 import java.io.IOException;
@@ -44,13 +47,14 @@ public class PythonMain {
                 System.err.println("\n failure of grammatical analysis");
                 return;
             }
-//        PythonASTBuilderVisitor visitor = new PythonASTBuilderVisitor();
-//        ASTNode astRoot = visitor.visit(tree);
-//
-//      System.out.println("\n Abstract Syntax Tree (AST)");
-//      ASTPrinter.printAST(astRoot);
-//        System.out.println("\n Symbol table:");
-//        visitor.symTab.print();
+        PythonASTBuilderVisitor visitor = new PythonASTBuilderVisitor();
+        ASTNode astRoot = visitor.visit(tree);
+
+      System.out.println("\n Abstract Syntax Tree (AST)");
+      ASTPrinter.printAST(astRoot);
+        System.out.println("\n Symbol table:");
+        visitor.symTab.print();
+        visitor.printsemanticErrors();
         }
         catch (IOException e) {
             e.printStackTrace();

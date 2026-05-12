@@ -12,4 +12,8 @@ public class VariableNode extends ASTNode {
     public void print(String indent) {
         System.out.println(indent + "Var: " + name + " [line " + lineNumber + "]");
     }
+
+    public String getName() {
+        return name;
+    }
 }

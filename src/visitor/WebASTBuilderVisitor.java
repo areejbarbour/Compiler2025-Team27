@@ -613,7 +613,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
         JinjaForNode node = new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
 
-        symTab.enterscope();
+      //  symTab.enterscope();
 
         WebTemplateParser.ForTargetListContext list = ctx.forTargetList();
 
@@ -622,7 +622,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
             if (text.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
                 node.variables.add(text);
-                symTab.insert(text);
+            //    symTab.insert(text);
             }
         }
 
@@ -654,7 +654,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 ctx.getStart().getLine()
         );
 
-        symTab.insert(name);
+       // symTab.insert(name);
 
         return node;
     }
