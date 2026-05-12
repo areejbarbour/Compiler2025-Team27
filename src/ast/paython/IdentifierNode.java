@@ -15,4 +15,8 @@ public class IdentifierNode extends ExprNode {
                 indent + nodeName + " (" + name + ") [line " + lineNumber + "]"
         );
     }
+
+    public String getName() {
+        return name;
+    }
 }

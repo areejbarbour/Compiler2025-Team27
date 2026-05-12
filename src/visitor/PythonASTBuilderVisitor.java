@@ -4,6 +4,7 @@ import antlr.pythonParserBaseVisitor;
 import ast.paython.*;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.RuleNode;
+import symbol_table.SymbolEntry;
 import symbol_table.SymbolTable;
 
 import java.util.ArrayList;
@@ -13,16 +14,22 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
     public SymbolTable symTab = new SymbolTable();
 
+    private List<String> semanticErrors =
+            new ArrayList<>();
+
     @Override
     public ASTNode visitProg(pythonParser.ProgContext ctx) {
         ProgramNode program = new ProgramNode(ctx.start.getLine());
 
+        symTab.enterscope("global");
         for (pythonParser.StatementContext stmt : ctx.statement()) {
             ASTNode child = visit(stmt);
             if (child != null) {
                 program.addChild(child);
             }
         }
+
+        symTab.exitscope();
 
         return program;
     }
@@ -32,19 +39,14 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         int line = ctx.start.getLine();
         String varName = ctx.assignment().ID().getText();
 
-        var entry = symTab.lookup(varName);
+        SymbolEntry entry = symTab.lookup(varName);
         if (entry == null) {
-            entry = symTab.insert(varName);
-            entry.setAttribute("kind", "variable");
+            entry = symTab.insert(varName, SymbolEntry.SymbolKind.VARIABLE);
         }
 
         AssignmentNode node = new AssignmentNode(varName, line);
-
         ASTNode value = visit(ctx.assignment().expr());
-        if (value != null) {
-            node.addChild(value);
-        }
-
+        node.addChild(value);
         return node;
     }
 
@@ -68,56 +70,49 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         String name = ctx.defFunction().ID(0).getText();
 
-        var entry = symTab.lookup(name);
+        SymbolEntry existing =
+                symTab.lookupCurrentScope(name);
 
-        if (entry != null) {
-
-            System.err.println(
-                    "Function already defined: " + name
+        if (existing != null)
+        {
+            semanticErrors.add(
+                    "Semantic Error: function '" +
+                            name +
+                            "' already defined (line " +
+                            ctx.start.getLine() + ")"
             );
-
-        } else {
-
-            entry = symTab.insert(name);
-
-            if (entry != null) {
-                entry.setAttribute("kind", "function");
-            }
         }
-
-        symTab.enterscope();
-
-        DefNode node =
-                new DefNode(name, ctx.start.getLine());
-
-        for (int i = 1; i < ctx.defFunction().ID().size(); i++) {
-
-            String param =
-                    ctx.defFunction().ID(i).getText();
-
-            var p = symTab.insert(param);
-
-            if (p == null) {
-
-                System.err.println(
-                        "Duplicate parameter: " + param
+        SymbolEntry func =
+                symTab.insert(
+                        name,
+                        SymbolEntry.SymbolKind.FUNCTION
                 );
 
-            } else {
+        symTab.enterscope("function:" + name);
+        for (int i = 1; i < ctx.defFunction().ID().size(); i++)
+        {
+            String paramName = ctx.defFunction().ID(i).getText();
 
-                p.setAttribute("kind", "parameter");
+            SymbolEntry param =
+                    symTab.insert(
+                            paramName,
+                            SymbolEntry.SymbolKind.PARAMETER
+                    );
+
+            if (param == null)
+            {
+                semanticErrors.add(
+                        "Semantic Error: duplicate parameter '" +
+                                paramName +
+                                "' (line " + ctx.start.getLine() + ")"
+                );
+                continue;
             }
 
-            node.addChild(
-                    new ParamNode(
-                            param,
-                            ctx.start.getLine()
-                    )
-            );
         }
 
-        ASTNode body =
-                visit(ctx.defFunction().block());
+        DefNode node = new DefNode(name, ctx.start.getLine());
+        ASTNode body = visit(ctx.defFunction().block());
 
         if (body != null) {
             node.addChild(body);
@@ -131,12 +126,23 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     @Override
     public ASTNode visitDecorate(pythonParser.DecorateContext ctx) {
 
-        String module = ctx.ID(0).getText();
-        String func = ctx.ID(1).getText();
+        String module = ctx.ID(0).getText(); // app
+        String func = ctx.ID(1).getText();   // route
 
-        DecorateNode node = new DecorateNode(module, func, ctx.start.getLine());
+        int line = ctx.start.getLine();
 
-        if (ctx.args() != null && !ctx.args().isEmpty()) {
+        SymbolEntry moduleEntry = symTab.lookup(module);
+
+        if (moduleEntry == null) {
+            semanticErrors.add(
+                    "Semantic Error: object '" +
+                            module + "' not defined (line " + line + ")"
+            );
+        }
+        DecorateNode node = new DecorateNode(module, func, line);
+
+        // 4. arguments
+        if (ctx.args() != null) {
             for (var arg : ctx.args()) {
                 ASTNode child = visit(arg);
                 if (child != null) {
@@ -176,13 +182,13 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         String var = ctx.for_().ID().getText();
 
-        symTab.enterscope();
+        symTab.enterscope("for-loop");
 
-        var entry = symTab.insert(var);
-
-        if (entry != null) {
-            entry.setAttribute("kind", "loop-variable");
-        }
+        SymbolEntry entry =
+                symTab.insert(
+                        var,
+                        SymbolEntry.SymbolKind.LOOP_VARIABLE
+                );
 
         ForNode node = new ForNode(var, ctx.start.getLine());
 
@@ -241,14 +247,14 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     public ASTNode visitBlock(pythonParser.BlockContext ctx) {
 
         BlockNode block = new BlockNode(ctx.start.getLine());
-
+      //  symTab.enterscope("block");
         for (pythonParser.StatementContext stmt : ctx.statement()) {
             ASTNode child = visit(stmt);
             if (child != null) {
                 block.addChild(child);
             }
         }
-
+       // symTab.exitscope();
         return block;
     }
 
@@ -317,15 +323,32 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         String name = ctx.ID().getText();
         ASTNode value = visit(ctx.expr());
-        if (value == null) {
-            System.err.println("Null value in keyword arg: " + name);
+        if (value == null)
+        {
+            semanticErrors.add(
+                    "Semantic Error: null value for '"
+                            + name + "' (line " + ctx.start.getLine() + ")"
+            );
+        }
+        SymbolEntry param = symTab.lookup(name);
+
+        if (param == null)
+        {
+            System.err.println(
+                    "Warning: unknown keyword argument '"
+                            + name + "' (line " +  ctx.start.getLine()  + ")"
+            );
         }
         return new KeywordArgNode(name, value);
     }
 
     @Override
     public ASTNode visitImportStmt(pythonParser.ImportStmtContext ctx) {
-
+        symTab.insert("Flask", SymbolEntry.SymbolKind.CLASS);
+        symTab.insert("request", SymbolEntry.SymbolKind.MODULE);
+        symTab.insert("render_template", SymbolEntry.SymbolKind.FUNCTION);
+        symTab.insert("redirect", SymbolEntry.SymbolKind.FUNCTION);
+        symTab.insert("url_for", SymbolEntry.SymbolKind.FUNCTION);
         return visit(ctx.importStatement());
     }
 
@@ -533,8 +556,23 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
     @Override
     public ASTNode visitIndexAccess(pythonParser.IndexAccessContext ctx) {
-        IndexAccessNode node = new IndexAccessNode(ctx.start.getLine());
-        node.addChild(new VariableNode(ctx.ID().getText(), ctx.start.getLine()));
+        int line = ctx.start.getLine();
+        String name = ctx.ID().getText();
+
+        SymbolEntry entry =
+                symTab.lookup(name);
+
+        if (entry == null)
+        {
+           semanticErrors.add(
+                    "Semantic Error: variable '"
+                            + name
+                            + "' not defined at line "
+                            + line
+            );
+        }
+        IndexAccessNode node = new IndexAccessNode(line);
+        node.addChild(new VariableNode(ctx.ID().getText(), line));
         node.addChild(visit(ctx.expr()));
         return node;
     }
@@ -550,6 +588,21 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
     @Override
     public ASTNode visitID(pythonParser.IDContext ctx) {
+        String name = ctx.getText();
+        int line = ctx.start.getLine();
+
+        SymbolEntry entry =
+                symTab.lookup(name);
+
+        if (entry == null)
+        {
+           semanticErrors.add(
+                    "Semantic Error: variable '"
+                            + name
+                            + "' not defined at line "
+                            + line
+            );
+        }
         return new VariableNode(ctx.getText(), ctx.start.getLine());
     }
 
@@ -558,11 +611,23 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         ASTNode target = visit(ctx.expr());
 
-        return new AttributeAccessNode(
-                target,
-                ctx.ID().getText(),
-                ctx.start.getLine()
-        );
+        String attr = ctx.ID().getText();
+
+        int line = ctx.start.getLine();
+        if (target instanceof VariableNode) {
+            String targetName = ((VariableNode) target).getName();
+
+            SymbolEntry entry = symTab.lookup(targetName);
+
+            if (entry == null) {
+                semanticErrors.add(
+                        "Semantic Error: '" + targetName +
+                                "' not defined at line " + line
+                );
+            }
+        }
+
+        return new AttributeAccessNode(target, attr, line);
     }
 
     @Override
@@ -573,6 +638,35 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         ASTNode function = visit(ctx.expr());
         if (function != null) {
             node.addChild(function);
+        }
+        if (function instanceof IdentifierNode)
+        {
+            String functionName =
+                    ((IdentifierNode) function).getName();
+
+            SymbolEntry entry =
+                    symTab.lookup(functionName);
+
+            if (entry == null)
+            {
+                System.err.println(
+                        "Semantic Error: function '" +
+                                functionName +
+                                "' not defined (line " +
+                                ctx.start.getLine() + ")"
+                );
+            }
+            else if (
+                    entry.getKind()
+                            != SymbolEntry.SymbolKind.FUNCTION
+            )
+            {
+                System.err.println(
+                        "'" + functionName +
+                                "' is not a function (line " +
+                                ctx.start.getLine() + ")"
+                );
+            }
         }
 
         if (ctx.args() != null) {
@@ -628,5 +722,12 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     @Override
     public String toString() {
         return "ASTNode";
+    }
+    public void printsemanticErrors()
+    {
+        for(String error: semanticErrors)
+        {
+            System.err.println(error);
+        }
     }
 }

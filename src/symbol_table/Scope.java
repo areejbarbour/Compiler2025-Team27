@@ -53,7 +53,7 @@ public class Scope {
 
         for (SymbolEntry entry : table.values()) {
             System.out.println(
-                    "  "
+                    " | "
                             + entry.getName()
                             + " | kind="
                             + entry.getKind()

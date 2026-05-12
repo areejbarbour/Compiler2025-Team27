@@ -10,7 +10,11 @@ public class SymbolTable {
 
     public SymbolTable()
     {
-        enterscope("global");
+        enterscope("builtins");   // 👈 scope خاص للـ built-in symbols
+
+        // built-in values
+        insert("__name__", SymbolEntry.SymbolKind.VARIABLE);
+
     }
 
     public void enterscope(String scopeName)
@@ -59,13 +63,10 @@ public class SymbolTable {
         int level = 0;
         for (Scope scope : allScopes) {
             System.out.println(
-                    "Scope level "
-                            + level
-                            + " ("
-                            + scope.getScopeName()
-                            + ") :"
+                    "Scope level " + level + " (" + scope.getScopeName() + ") :"
             );
             scope.print();
+            System.out.println("_________________________________");
             level++;
         }
     }

@@ -6,7 +6,8 @@ import java.util.Objects;
 public class SymbolEntry {
 
     public enum SymbolKind {
-
+        CLASS,
+        MODULE,
         VARIABLE,
         FUNCTION,
         PARAMETER,
