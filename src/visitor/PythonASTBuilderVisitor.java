@@ -35,18 +35,31 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     }
 
     @Override
-    public ASTNode visitAssignmentStmt(pythonParser.AssignmentStmtContext ctx) {
+    public ASTNode visitAssignmentStmt(pythonParser.AssignmentStmtContext ctx)
+    {
+
         int line = ctx.start.getLine();
         String varName = ctx.assignment().ID().getText();
+        ASTNode value = visit(ctx.assignment().expr());
 
         SymbolEntry entry = symTab.lookup(varName);
-        if (entry == null) {
-            entry = symTab.insert(varName, SymbolEntry.SymbolKind.VARIABLE);
+
+        if (entry == null)
+        {
+            entry = symTab.insert(
+                    varName,
+                    SymbolEntry.SymbolKind.VARIABLE
+            );
         }
+        String type = resolveType(value);
+        entry.setType(type);
 
         AssignmentNode node = new AssignmentNode(varName, line);
-        ASTNode value = visit(ctx.assignment().expr());
-        node.addChild(value);
+        if (value != null)
+        {
+            node.addChild(value);
+        }
+
         return node;
     }
 
@@ -70,8 +83,7 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         String name = ctx.defFunction().ID(0).getText();
 
-        SymbolEntry existing =
-                symTab.lookupCurrentScope(name);
+        SymbolEntry existing = symTab.lookupCurrentScope(name);
 
         if (existing != null)
         {
@@ -181,14 +193,9 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     public ASTNode visitForStmt(pythonParser.ForStmtContext ctx) {
 
         String var = ctx.for_().ID().getText();
-
-        symTab.enterscope("for-loop");
-
+        symTab.enterscope("loop_scope");
         SymbolEntry entry =
-                symTab.insert(
-                        var,
-                        SymbolEntry.SymbolKind.LOOP_VARIABLE
-                );
+                symTab.insert(var, SymbolEntry.SymbolKind.LOOP_VARIABLE);
 
         ForNode node = new ForNode(var, ctx.start.getLine());
 
@@ -197,15 +204,17 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         if (iterable != null) {
             node.addChild(iterable);
         }
+        String iterableType = resolveType(iterable);
+
+        String elementType = inferElementType(iterableType);
+
+        entry.setType(elementType);
 
         ASTNode body = visit(ctx.for_().loopBlock());
-
         if (body != null) {
             node.addChild(body);
         }
-
         symTab.exitscope();
-
         return node;
     }
 
@@ -247,14 +256,12 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     public ASTNode visitBlock(pythonParser.BlockContext ctx) {
 
         BlockNode block = new BlockNode(ctx.start.getLine());
-      //  symTab.enterscope("block");
         for (pythonParser.StatementContext stmt : ctx.statement()) {
             ASTNode child = visit(stmt);
             if (child != null) {
                 block.addChild(child);
             }
         }
-       // symTab.exitscope();
         return block;
     }
 
@@ -345,7 +352,7 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     @Override
     public ASTNode visitImportStmt(pythonParser.ImportStmtContext ctx) {
         symTab.insert("Flask", SymbolEntry.SymbolKind.CLASS);
-        symTab.insert("request", SymbolEntry.SymbolKind.MODULE);
+        symTab.insert("request", SymbolEntry.SymbolKind.OBJECT);
         symTab.insert("render_template", SymbolEntry.SymbolKind.FUNCTION);
         symTab.insert("redirect", SymbolEntry.SymbolKind.FUNCTION);
         symTab.insert("url_for", SymbolEntry.SymbolKind.FUNCTION);
@@ -639,10 +646,9 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         if (function != null) {
             node.addChild(function);
         }
-        if (function instanceof IdentifierNode)
+        if (function instanceof VariableNode varNode)
         {
-            String functionName =
-                    ((IdentifierNode) function).getName();
+            String functionName = varNode.getName();
 
             SymbolEntry entry =
                     symTab.lookup(functionName);
@@ -728,6 +734,61 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         for(String error: semanticErrors)
         {
             System.err.println(error);
+        }
+    }
+    private String resolveType(ASTNode node)
+    {
+        if (node == null)
+            return "UNKNOWN";
+
+        if (node instanceof IntegerNode) return "INT";
+        if (node instanceof DoubleNode) return "DOUBLE";
+        if (node instanceof StringNode) return "STRING";
+        if (node instanceof BooleanNode) return "BOOL";
+        if (node instanceof ListNode) return "LIST";
+        if (node instanceof DictNode) return "DICT";
+        if (node instanceof NoneNode) return "NONE";
+
+        // variable → لازم نجيب النوع الحقيقي من symbol table
+        if (node instanceof VariableNode)
+        {
+            String name = ((VariableNode) node).getName();
+
+            SymbolEntry e = symTab.lookup(name);
+
+            if (e != null && e.getType() != null)
+            {
+                return e.getType();
+            }
+
+            return "UNKNOWN";
+        }
+
+        // function call
+        if (node instanceof FunctionCallNode)
+        {
+            return "UNKNOWN";
+        }
+
+        return "UNKNOWN";
+    }
+    private String inferElementType(String iterableType)
+    {
+        if (iterableType == null) return "UNKNOWN";
+
+        switch (iterableType)
+        {
+            case "LIST":
+                return "UNKNOWN"; // أو DICT element لو عندك typing أقوى
+
+            case "STRING":
+                return "STRING"; // كل char أو string element
+
+            case "DICT":
+                return "UNKNOWN";
+
+            default:
+                return "UNKNOWN";
         }
     }
 }
