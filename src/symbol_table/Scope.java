@@ -57,6 +57,8 @@ public class Scope {
                             + entry.getName()
                             + " | kind="
                             + entry.getKind()
+                            + " | type="
+                            + entry.getType()
 
             );
         }

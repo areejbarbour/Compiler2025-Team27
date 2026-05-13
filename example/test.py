@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for
 app = Flask("app")
 products =[{"name": "Laptop", "price": 1200, "details": "High performance laptop","image": "https://via.placeholder.com/150"},{"name": "Phone", "price": 700, "details": "Smartphone","image": "https://via.placeholder.com/150"}]
-
+x=5150
+y="rasha"
 @app.route("/products")
 def view_products():
     return render_template("products.html", products_list=products)
-
+vie_products(g)
 @app.route("/add_product", methods=["GET", "POST"])
 def add_product():
     if request.method == "POST":
