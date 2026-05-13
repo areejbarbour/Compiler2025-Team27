@@ -15,4 +15,8 @@ public class AttributeNode extends WebASTNode {
     public void print(String indent) {
         System.out.println(indent + nodeName + " " + name + "=\"" + value + "\"");
     }
+
+    public String getName() {
+        return name;
+    }
 }
