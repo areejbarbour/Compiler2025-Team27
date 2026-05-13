@@ -15,7 +15,8 @@ public class SymbolEntry {
         TEMPLATE_VARIABLE,
         LOOP_VARIABLE,
         BLOCK,
-        OBJECT
+        OBJECT,
+        HTML_TAG
 
     }
     private  String name;

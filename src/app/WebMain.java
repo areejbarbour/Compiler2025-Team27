@@ -3,6 +3,7 @@ package app;
 import antlr.WebTemplateLexer;
 import antlr.WebTemplateParser;
 import org.antlr.v4.runtime.*;
+import visitor.WebASTBuilderVisitor;
 
 import static org.antlr.v4.runtime.CharStreams.*;
 
@@ -46,11 +47,23 @@ public class WebMain {
 
         System.out.println("\nParse Tree:");
         System.out.println(tree.toStringTree(parser));
-
         if (parser.getNumberOfSyntaxErrors() == 0) {
+
+            WebASTBuilderVisitor visitor =
+                    new WebASTBuilderVisitor();
+
+            // 🔥 IMPORTANT: build AST + fill symbol table
+            visitor.visit(tree);
+
+            // print symbol table
+            visitor.symTab.print();
+
             System.out.println("\nSuccessful grammatical analysis");
+
         } else {
             System.err.println("\nSyntax errors found");
         }
+
+
     }
 }
