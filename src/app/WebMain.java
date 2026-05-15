@@ -10,7 +10,7 @@ import static org.antlr.v4.runtime.CharStreams.*;
 public class WebMain {
 
     public static void main(String[] args) throws Exception {
-
+       // String filePath = "example/test.py";
         String filePath = "templates/products.html";
 //        String filePath = "templates/add_product.html";
 //        String filePath = "templates/product_details.html";

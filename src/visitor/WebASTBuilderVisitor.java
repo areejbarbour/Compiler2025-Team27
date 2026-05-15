@@ -2,7 +2,7 @@ package visitor;
 
 import antlr.WebTemplateParser;
 import antlr.WebTemplateParserBaseVisitor;
-import ast.paython.VariableNode;
+import ast.paython.*;
 import ast.web.*;
 
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -69,21 +69,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         }
 
         return null;
-    }
-
-    private String extractVariable(String text)
-    {
-        if (text == null) return null;
-
-        text = text.trim();
-
-        if (text.startsWith("{{") && text.endsWith("}}"))
-        {
-            text = text.substring(2, text.length() - 2).trim();
-        }
-
-        String[] parts = text.split("\\|");
-        return parts[0].trim();
     }
 
     @Override
@@ -646,56 +631,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
         return node;
     }
-    private List<String> extractVariables(String text) {
 
-        List<String> vars = new ArrayList<>();
-
-        if (text == null || text.isEmpty()) {
-            return vars;
-        }
-
-        // حذف رموز jinja
-        text = text.replace("{{", "")
-                .replace("}}", "")
-                .replace("{%", "")
-                .replace("%}", "");
-
-        // تقسيم النص
-        String[] parts = text.split("[^a-zA-Z0-9_\\.]");
-
-        for (String part : parts) {
-
-            if (part.isEmpty()) {
-                continue;
-            }
-
-            // تجاهل الكلمات المحجوزة
-            if (
-                    part.equals("if") ||
-                            part.equals("elif") ||
-                            part.equals("else") ||
-                            part.equals("and") ||
-                            part.equals("or") ||
-                            part.equals("not") ||
-                            part.equals("True") ||
-                            part.equals("False") ||
-                            part.equals("None") ||
-                            part.equals("in")
-            ) {
-                continue;
-            }
-
-            // product.price -> product
-            String baseVar = part.split("\\.")[0];
-
-            // منع التكرار
-            if (!vars.contains(baseVar)) {
-                vars.add(baseVar);
-            }
-        }
-
-        return vars;
-    }
     @Override
     public WebASTNode visitJinjaElifFull(WebTemplateParser.JinjaElifFullContext ctx) {
         symTab.enterscope("jinja-elif");
@@ -733,45 +669,90 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
     @Override
     public WebASTNode visitJinjaElseFull(WebTemplateParser.JinjaElseFullContext ctx) {
-
+        symTab.enterscope("jinja_else");
         JinjaIfNode node = new JinjaIfNode(null, ctx.getStart().getLine());
 
         for (WebTemplateParser.ElementContext el : ctx.element()) {
             WebASTNode child = visit(el);
             if (child != null) node.body.add(child);
         }
-
+        symTab.exitscope();
         return node;
     }
     @Override
     public WebASTNode visitJinjaForFull(WebTemplateParser.JinjaForFullContext ctx) {
 
-        JinjaForNode node = new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
+        symTab.enterscope("jinja_For");
 
-      //  symTab.enterscope();
+        JinjaForNode node =
+                new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
 
+        // =========================
+        // 1. handle loop variables
+        // =========================
         WebTemplateParser.ForTargetListContext list = ctx.forTargetList();
 
         for (int i = 0; i < list.getChildCount(); i++) {
+
             String text = list.getChild(i).getText();
 
             if (text.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
+
                 node.variables.add(text);
-            //    symTab.insert(text);
+
+                SymbolEntry entry =
+                        symTab.insert(text, SymbolEntry.SymbolKind.LOOP_VARIABLE);
+
+                if (entry != null) {
+                    entry.setType("UNKNOWN");
+                }
             }
         }
 
-        node.iterable = visit(ctx.expr());
+        // =========================
+        // 2. handle iterable (IMPORTANT FIX)
+        // =========================
+       // WebASTNode iterableNode = visit(ctx.expr());
+       // node.iterable = iterableNode;
 
-        for (WebTemplateParser.ElementContext el : ctx.element()) {
-            WebASTNode child = visit(el);
-            if (child != null) node.body.add(child);
+        // ❌ REMOVE THIS بالكامل:
+        // String iterableText = ctx.expr().getText();
+        // List<String> vars = extractVariables(iterableText);
+
+        // ✅ CORRECT WAY: AST-based check
+        String exprText = ctx.getChild(ctx.getChildCount() - 1).getText();
+
+        List<String> vars = extractVariables(exprText);
+
+        for (String var : vars) {
+
+            SymbolEntry e = symTab.lookup(var);
+
+            if (e == null) {
+                System.err.println(
+                        "Undefined iterable variable: " +
+                                var +
+                                " line " + ctx.getStart().getLine()
+                );
+            }
         }
+
+        // =========================
+        // 3. visit body
+        // =========================
+        for (WebTemplateParser.ElementContext el : ctx.element()) {
+
+            WebASTNode child = visit(el);
+
+            if (child != null) {
+                node.body.add(child);
+            }
+        }
+
         symTab.exitscope();
 
         return node;
     }
-
     @Override
     public WebASTNode visitJinjaForTargetList(WebTemplateParser.JinjaForTargetListContext ctx) {
         return null;
@@ -782,61 +763,114 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
         String name = ctx.JSTMT_IDENTIFIER().getText();
         WebASTNode value = visit(ctx.expr());
+        SymbolEntry entry = symTab.insert(
+                name,
+                SymbolEntry.SymbolKind.VARIABLE
+        );
+
+        if (entry != null) {
+            entry.setType(resolveType(value));
+        }
 
         JinjaSetNode node = new JinjaSetNode(
                 name,
                 value,
                 ctx.getStart().getLine()
         );
-
-       // symTab.insert(name);
-
         return node;
     }
+    private String resolveType(ASTNode node)
+    {
+        if (node == null)
+            return "UNKNOWN";
+
+        if (node instanceof IntegerNode) return "INT";
+        if (node instanceof DoubleNode) return "DOUBLE";
+        if (node instanceof StringNode) return "STRING";
+        if (node instanceof BooleanNode) return "BOOL";
+        if (node instanceof ListNode) return "LIST";
+        if (node instanceof DictNode) return "DICT";
+        if (node instanceof NoneNode) return "NONE";
+
+        // variable → لازم نجيب النوع الحقيقي من symbol table
+        if (node instanceof VariableNode)
+        {
+            String name = ((VariableNode) node).getName();
+
+            SymbolEntry e = symTab.lookup(name);
+
+            if (e != null && e.getType() != null)
+            {
+                return e.getType();
+            }
+
+            return "UNKNOWN";
+        }
+
+        // function call
+        if (node instanceof FunctionCallNode)
+        {
+            return "UNKNOWN";
+        }
+
+        return "UNKNOWN";
+    }
+
     @Override
     public WebASTNode visitJinjaBlockFull(WebTemplateParser.JinjaBlockFullContext ctx) {
-
+        symTab.enterscope("jinja-block");
         List<WebASTNode> children = new ArrayList<>();
 
         for (WebTemplateParser.ElementContext el : ctx.element()) {
             children.add(visit(el));
         }
-
+        symTab.exitscope();
         return new JinjaBlockNode(children);
     }
 
     @Override
     public WebASTNode visitJinjaExpressionFull(WebTemplateParser.JinjaExpressionFullContext ctx) {
-        return new JinjaExprNode(ctx.expr().getText(), ctx.getStart().getLine());
+        String exprText = ctx.expr().getText();
+        validateExpressionVariables(exprText,ctx.getStart().getLine());
+        return new JinjaExprNode(
+                exprText,
+                ctx.getStart().getLine()
+        );
     }
 
     @Override
     public WebASTNode visitExprRoot(WebTemplateParser.ExprRootContext ctx) {
+        validateExpressionVariables(ctx.getText(),ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitExprOr(WebTemplateParser.ExprOrContext ctx) {
+        validateExpressionVariables(ctx.getText(),ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitExprAnd(WebTemplateParser.ExprAndContext ctx) {
+        validateExpressionVariables(ctx.getText(),ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitExprNot(WebTemplateParser.ExprNotContext ctx) {
+        validateExpressionVariables(ctx.getText(),ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitExprComparisonRoot(WebTemplateParser.ExprComparisonRootContext ctx) {
+        validateExpressionVariables(ctx.getText(),ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitExprComparison(WebTemplateParser.ExprComparisonContext ctx) {
+        validateExpressionVariables(ctx.getText(),ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
@@ -869,24 +903,29 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     }
     @Override
     public WebASTNode visitExprAdd(WebTemplateParser.ExprAddContext ctx) {
+        validateExpressionVariables(ctx.getText(), ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
     @Override
     public WebASTNode visitExprMul(WebTemplateParser.ExprMulContext ctx) {
+        validateExpressionVariables(ctx.getText(), ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitExprUnary(WebTemplateParser.ExprUnaryContext ctx) {
+        validateExpressionVariables(ctx.getText(), ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
     @Override
     public WebASTNode visitExprPostfixRoot(WebTemplateParser.ExprPostfixRootContext ctx) {
+        validateExpressionVariables(ctx.getText(), ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitExprPostfix(WebTemplateParser.ExprPostfixContext ctx) {
+        validateExpressionVariables(ctx.getText(), ctx.getStart().getLine());
         return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
     }
 
@@ -911,11 +950,32 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
     @Override
     public WebASTNode visitAtomIdJinja(WebTemplateParser.AtomIdJinjaContext ctx) {
-        return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
+        String name = ctx.getText();
+        SymbolEntry e = symTab.lookup(name);
+        if (e == null) {
+            System.err.println(
+                    "Undefined variable: "
+                            + name +
+                            " line "
+                            + ctx.getStart().getLine()
+            );
+        }
+
+        return new JinjaExprNode(name, ctx.getStart().getLine());
     }
     @Override
     public WebASTNode visitAtomIdStmt(WebTemplateParser.AtomIdStmtContext ctx) {
-        return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine());
+        String name = ctx.getText();
+        SymbolEntry e = symTab.lookup(name);
+        if (e == null) {
+            System.err.println(
+                    "Undefined variable: "
+                            + name +
+                            " line "
+                            + ctx.getStart().getLine()
+            );
+        }
+        return new JinjaExprNode(name, ctx.getStart().getLine());
     }
 
     @Override
@@ -1026,7 +1086,75 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     public String toString() {
         return super.toString();
     }
+    private List<String> extractVariables(String text) {
 
+        List<String> vars = new ArrayList<>();
+        if (text == null || text.isEmpty()) return vars;
+
+        // remove Jinja syntax
+        text = text.replace("{{", "")
+                .replace("}}", "")
+                .replace("{%", "")
+                .replace("%}", "");
+
+        // regex لاستخراج identifiers فقط
+        java.util.regex.Pattern p =
+                java.util.regex.Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
+
+        java.util.regex.Matcher m = p.matcher(text);
+
+        while (m.find()) {
+
+            String var = m.group();
+
+            // skip reserved keywords
+            if (var.equals("if") || var.equals("else") || var.equals("elif") ||
+                    var.equals("and") || var.equals("or") || var.equals("not") ||
+                    var.equals("True") || var.equals("False") || var.equals("None") ||
+                    var.equals("in")) {
+                continue;
+            }
+
+            if (!vars.contains(var)) {
+                vars.add(var);
+            }
+        }
+
+        return vars;
+    }
+    private String extractVariable(String text)
+    {
+        if (text == null) return null;
+
+        text = text.trim();
+
+        if (text.startsWith("{{") && text.endsWith("}}"))
+        {
+            text = text.substring(2, text.length() - 2).trim();
+        }
+
+        String[] parts = text.split("\\|");
+        return parts[0].trim();
+    }
+    private void validateExpressionVariables(String text, int line) {
+
+        List<String> vars = extractVariables(text);
+
+        for (String var : vars) {
+
+            SymbolEntry e = symTab.lookup(var);
+
+            if (e == null) {
+
+                System.err.println(
+                        "Undefined variable: "
+                                + var +
+                                " line "
+                                + line
+                );
+            }
+        }
+    }
 
 }
 
