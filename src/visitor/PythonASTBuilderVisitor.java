@@ -4,8 +4,7 @@ import antlr.pythonParserBaseVisitor;
 import ast.paython.*;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.RuleNode;
-import symbol_table.SymbolEntry;
-import symbol_table.SymbolTable;
+import symbol_table.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +50,7 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
                     SymbolEntry.SymbolKind.VARIABLE
             );
         }
-        String type = resolveType(value);
+        Type type = resolveType(value);
         entry.setType(type);
 
         AssignmentNode node = new AssignmentNode(varName, line);
@@ -204,9 +203,9 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         if (iterable != null) {
             node.addChild(iterable);
         }
-        String iterableType = resolveType(iterable);
+        Type iterableType = resolveType(iterable);
 
-        String elementType = inferElementType(iterableType);
+        Type elementType = inferElementType(iterableType);
 
         entry.setType(elementType);
 
@@ -736,59 +735,73 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
             System.err.println(error);
         }
     }
-    private String resolveType(ASTNode node)
-    {
-        if (node == null)
-            return "UNKNOWN";
+    private Type resolveType(ASTNode node) {
+        if (node instanceof IntegerNode)
+            return new PrimitiveType("INT");
 
-        if (node instanceof IntegerNode) return "INT";
-        if (node instanceof DoubleNode) return "DOUBLE";
-        if (node instanceof StringNode) return "STRING";
-        if (node instanceof BooleanNode) return "BOOL";
-        if (node instanceof ListNode) return "LIST";
-        if (node instanceof DictNode) return "DICT";
-        if (node instanceof NoneNode) return "NONE";
+        if (node instanceof DoubleNode)
+            return new PrimitiveType("DOUBLE");
 
-        // variable → لازم نجيب النوع الحقيقي من symbol table
-        if (node instanceof VariableNode)
-        {
-            String name = ((VariableNode) node).getName();
+        if (node instanceof StringNode)
+            return new PrimitiveType("STRING");
 
-            SymbolEntry e = symTab.lookup(name);
+        if (node instanceof BooleanNode)
+            return new PrimitiveType("BOOL");
+
+        if (node instanceof NoneNode)
+            return new PrimitiveType("NONE");
+
+        if (node instanceof ListNode listNode) {
+            if (listNode.getChildren().isEmpty())
+                return new ListType(new PrimitiveType("UNKNOWN"));
+
+            Type first = resolveType(listNode.getChildren().get(0));
+
+            return new ListType(first);
+        }
+        if (node instanceof DictNode dictNode) {
+
+            if (dictNode.getChildren().isEmpty())
+                return new DictType(
+                        new PrimitiveType("UNKNOWN"),
+                        new PrimitiveType("UNKNOWN")
+                );
+
+            KeyValueNode kv = (KeyValueNode) dictNode.getChildren().get(0);
+
+            Type valueType = resolveType(kv.getValue());
+
+            return new DictType(
+                    new PrimitiveType("STRING"), // key ALWAYS string
+                    valueType
+            );
+        }
+        if (node instanceof VariableNode v) {
+            SymbolEntry e = symTab.lookup(v.getName());
 
             if (e != null && e.getType() != null)
-            {
                 return e.getType();
-            }
 
-            return "UNKNOWN";
+            return new PrimitiveType("UNKNOWN");
         }
-
-        // function call
-        if (node instanceof FunctionCallNode)
-        {
-            return "UNKNOWN";
-        }
-
-        return "UNKNOWN";
+        return new PrimitiveType("UNKNOWN");
     }
-    private String inferElementType(String iterableType)
+    private Type inferElementType(Type iterableType)
     {
-        if (iterableType == null) return "UNKNOWN";
+        if (iterableType == null)
+            return new PrimitiveType("UNKNOWN");
 
-        switch (iterableType)
+        if (iterableType instanceof ListType listType)
         {
-            case "LIST":
-                return "UNKNOWN"; // أو DICT element لو عندك typing أقوى
-
-            case "STRING":
-                return "STRING"; // كل char أو string element
-
-            case "DICT":
-                return "UNKNOWN";
-
-            default:
-                return "UNKNOWN";
+            return listType.getElementtype();
         }
+
+        if (iterableType instanceof PrimitiveType p)
+        {
+            if (p.name().equals("STRING"))
+                return new PrimitiveType("STRING");
+        }
+
+        return new PrimitiveType("UNKNOWN");
     }
 }

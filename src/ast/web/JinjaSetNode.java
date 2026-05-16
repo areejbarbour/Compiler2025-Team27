@@ -19,4 +19,8 @@ public class JinjaSetNode extends WebASTNode {
             value.print(indent + "  ");
         }
     }
+
+    public WebASTNode getValue() {
+        return value;
+    }
 }
