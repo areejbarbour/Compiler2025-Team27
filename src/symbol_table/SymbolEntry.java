@@ -21,12 +21,13 @@ public class SymbolEntry {
     }
     private  String name;
     private SymbolKind kind;
-    private String type;
+    private Type type;
     private HashMap<String, Object>attributes;
     public  SymbolEntry(String name,SymbolKind kind)
     {
         this.name=name;
         this.kind=kind;
+        this.type = null;
         this.attributes = new HashMap<>();
     }
     public  SymbolKind getKind()
@@ -39,20 +40,18 @@ public class SymbolEntry {
         return  name;
     }
 
-    public void setType(String type)
-    {
-        this.type = type;
-    }
-    public String getType()
-   {
-        return type;
-    }
-
     public void setAttribute(String name,Object value)
     {
         attributes.put(name,value);
     }
     public Object getAttribute(String key) {
         return attributes.get(key);
+    }
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 }

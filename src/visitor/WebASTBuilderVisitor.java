@@ -9,8 +9,10 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import symbol_table.PrimitiveType;
 import symbol_table.SymbolEntry;
 import symbol_table.SymbolTable;
+import symbol_table.Type;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -21,8 +23,8 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
     @Override
     public WebASTNode visitDocumentRoot(WebTemplateParser.DocumentRootContext ctx) {
-        DocumentNode doc = new DocumentNode(ctx.getStart().getLine());
         symTab.enterscope("template");
+        DocumentNode doc = new DocumentNode(ctx.getStart().getLine());
         for (WebTemplateParser.ElementContext elCtx : ctx.element()) {
             WebASTNode child = visit(elCtx);
             if (child != null) {
@@ -702,24 +704,14 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
                 SymbolEntry entry =
                         symTab.insert(text, SymbolEntry.SymbolKind.LOOP_VARIABLE);
-
+                WebASTNode iterable = visit(ctx.expr());
+                Type iterableType = resolveType(iterable);
                 if (entry != null) {
-                    entry.setType("UNKNOWN");
+                    entry.setType(iterableType);
                 }
             }
         }
 
-        // =========================
-        // 2. handle iterable (IMPORTANT FIX)
-        // =========================
-       // WebASTNode iterableNode = visit(ctx.expr());
-       // node.iterable = iterableNode;
-
-        // ❌ REMOVE THIS بالكامل:
-        // String iterableText = ctx.expr().getText();
-        // List<String> vars = extractVariables(iterableText);
-
-        // ✅ CORRECT WAY: AST-based check
         String exprText = ctx.getChild(ctx.getChildCount() - 1).getText();
 
         List<String> vars = extractVariables(exprText);
@@ -737,9 +729,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
             }
         }
 
-        // =========================
-        // 3. visit body
-        // =========================
         for (WebTemplateParser.ElementContext el : ctx.element()) {
 
             WebASTNode child = visit(el);
@@ -769,7 +758,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         );
 
         if (entry != null) {
-            entry.setType(resolveType(value));
+           entry.setType(resolveType(value));
         }
 
         JinjaSetNode node = new JinjaSetNode(
@@ -779,41 +768,177 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         );
         return node;
     }
-    private String resolveType(ASTNode node)
+    private Type resolveType(WebASTNode node)
     {
         if (node == null)
-            return "UNKNOWN";
+            return new PrimitiveType("UNKNOWN");
 
-        if (node instanceof IntegerNode) return "INT";
-        if (node instanceof DoubleNode) return "DOUBLE";
-        if (node instanceof StringNode) return "STRING";
-        if (node instanceof BooleanNode) return "BOOL";
-        if (node instanceof ListNode) return "LIST";
-        if (node instanceof DictNode) return "DICT";
-        if (node instanceof NoneNode) return "NONE";
+        // =========================
+        // HTML / TEXT
+        // =========================
 
-        // variable → لازم نجيب النوع الحقيقي من symbol table
-        if (node instanceof VariableNode)
+        if (node instanceof TextNode)
+            return new PrimitiveType("STRING");
+
+        if (node instanceof ValueNode)
+            return new PrimitiveType("STRING");
+
+        if (node instanceof AttributeNode)
+            return new PrimitiveType("STRING");
+
+        // =========================
+        // CSS
+        // =========================
+
+        if (node instanceof CssValueNode)
+            return new PrimitiveType("STRING");
+
+        if (node instanceof CssConditionNode)
+            return new PrimitiveType("BOOL");
+
+        // =========================
+        // Jinja expressions
+        // =========================
+        if (node instanceof JinjaExprNode exprNode)
         {
-            String name = ((VariableNode) node).getName();
+            String text = exprNode.getExpr().trim();
 
-            SymbolEntry e = symTab.lookup(name);
+            // =========================
+            // literals
+            // =========================
 
-            if (e != null && e.getType() != null)
+            if (text.matches("\\d+\\.\\d+"))
+                return new PrimitiveType("DOUBLE");
+
+            if (text.matches("\\d+"))
+                return new PrimitiveType("INT");
+
+            if (text.equals("True") || text.equals("False"))
+                return new PrimitiveType("BOOL");
+
+            if (
+                    (text.startsWith("\"") && text.endsWith("\"")) ||
+                            (text.startsWith("'") && text.endsWith("'"))
+            )
             {
-                return e.getType();
+                return new PrimitiveType("STRING");
             }
 
-            return "UNKNOWN";
+            // =========================
+            // arithmetic expressions
+            // =========================
+
+            if (
+                    text.contains("+") ||
+                            text.contains("-") ||
+                            text.contains("*") ||
+                            text.contains("/")
+            )
+            {
+                // simple heuristic
+                if (text.matches(".*\\d+\\.\\d+.*"))
+                    return new PrimitiveType("DOUBLE");
+
+                return new PrimitiveType("INT");
+            }
+
+            // =========================
+            // comparison expressions
+            // =========================
+
+            if (
+                    text.contains("==") ||
+                            text.contains("!=") ||
+                            text.contains(">") ||
+                            text.contains("<") ||
+                            text.contains(">=") ||
+                            text.contains("<=")
+            )
+            {
+                return new PrimitiveType("BOOL");
+            }
+
+            // =========================
+            // logical expressions
+            // =========================
+
+            if (
+                    text.contains(" and ") ||
+                            text.contains(" or ") ||
+                            text.startsWith("not ")
+            )
+            {
+                return new PrimitiveType("BOOL");
+            }
+
+            // =========================
+            // variable lookup
+            // =========================
+
+            SymbolEntry e = symTab.lookup(text);
+
+            if (e != null && e.getType() != null)
+                return e.getType();
+
+            return new PrimitiveType("UNKNOWN");
         }
 
-        // function call
-        if (node instanceof FunctionCallNode)
+        // =========================
+        // Jinja set
+        // =========================
+
+        if (node instanceof JinjaSetNode setNode)
         {
-            return "UNKNOWN";
+            return resolveType(setNode.getValue());
         }
 
-        return "UNKNOWN";
+        // =========================
+        // Jinja if
+        // =========================
+
+        if (node instanceof JinjaIfNode)
+        {
+            return new PrimitiveType("BOOL");
+        }
+
+        // =========================
+        // Jinja for
+        // =========================
+
+        if (node instanceof JinjaForNode)
+        {
+            return new PrimitiveType("ITERABLE");
+        }
+
+        // =========================
+        // HTML nodes
+        // =========================
+
+        if (
+                node instanceof HtmlElementNode ||
+                        node instanceof HtmlSelfClosingNode ||
+                        node instanceof HtmlVoidNode ||
+                        node instanceof HtmlCloseNode
+        )
+        {
+            return new PrimitiveType("HTML");
+        }
+
+        // =========================
+        // CSS nodes
+        // =========================
+
+        if (
+                node instanceof CssRuleNode ||
+                        node instanceof CssBlockNode ||
+                        node instanceof CssDeclarationNode ||
+                        node instanceof CssMediaRuleNode
+        )
+        {
+            return new PrimitiveType("CSS");
+        }
+
+        return new PrimitiveType("UNKNOWN");
     }
 
     @Override

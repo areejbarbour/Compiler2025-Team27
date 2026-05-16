@@ -6,7 +6,7 @@ y="rasha"
 @app.route("/products")
 def view_products():
     return render_template("products.html", products_list=products)
-vie_products(g)
+
 @app.route("/add_product", methods=["GET", "POST"])
 def add_product():
     if request.method == "POST":

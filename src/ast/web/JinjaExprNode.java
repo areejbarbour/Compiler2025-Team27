@@ -13,4 +13,7 @@ public class JinjaExprNode extends WebASTNode {
     public void print(String indent) {
         System.out.println(indent + nodeName + " {{ " + expression + " }}");
     }
+    public String getExpr() {
+        return expression;
+    }
 }

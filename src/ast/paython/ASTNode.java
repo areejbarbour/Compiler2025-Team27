@@ -21,4 +21,7 @@ public abstract class ASTNode {
     }
 
     public abstract void print(String indent);
+    public List<ASTNode> getChildren() {
+        return children;
+    }
 }
