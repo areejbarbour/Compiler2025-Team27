@@ -1,8 +1,5 @@
 package visitor;
 
-import antlr.WebTemplateParser;
-import antlr.WebTemplateParserBaseVisitor;
-import ast.paython.*;
 import ast.web.*;
 
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -16,10 +13,22 @@ import symbol_table.Type;
 
 import java.util.List;
 import java.util.ArrayList;
-
+import java.util.Set;
+import java.util.HashSet;
 
 public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNode> {
+
+
+    public WebASTBuilderVisitor(Set<String> flaskVariables) {
+        this.flaskVariables = flaskVariables;
+
+        System.out.println("===== RECEIVED FROM PYTHON =====");
+        System.out.println(flaskVariables);
+    }
+    public WebASTBuilderVisitor() {
+    }
     public SymbolTable symTab=new SymbolTable();
+    private Set<String> flaskVariables = new HashSet<>();
 
     @Override
     public WebASTNode visitDocumentRoot(WebTemplateParser.DocumentRootContext ctx) {
@@ -62,10 +71,10 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
             SymbolEntry e = symTab.lookup(baseVar);
 
-            if (e == null) {
+            if (e == null && !flaskVariables.contains(baseVar)) {
                 System.err.println(
-                        "Undefined template variable: " + var +
-                                " line " + ctx.start.getLine()
+                        "Semantic Error: Missing Flask Variable '" + baseVar +
+                                "' requested in template at line " + ctx.start.getLine()
                 );
             }
         }
@@ -187,43 +196,32 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     @Override
     public WebASTNode visitHtmlAttributeBoolean(WebTemplateParser.HtmlAttributeBooleanContext ctx) {
         String name = ctx.TAG_ATTR_NAME().getText();
-
         String value = "true";
-
         return new AttributeNode(name, value, ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitAttrValueSingle(WebTemplateParser.AttrValueSingleContext ctx) {
-
         String text = ctx.ATTR_VALUE_SINGLE().getText();
-
         String value = text.substring(1, text.length() - 1);
-
         return new ValueNode(value, ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitAttrValueDouble(WebTemplateParser.AttrValueDoubleContext ctx) {
-
         String text = ctx.ATTR_VALUE_DOUBLE().getText();
-
         String value = text.substring(1, text.length() - 1);
-
         return new ValueNode(value, ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitAttrValueUnquoted(WebTemplateParser.AttrValueUnquotedContext ctx) {
-
         String value = ctx.ATTR_VALUE_UNQUOTED().getText();
-
         return new ValueNode(value, ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitCssBlockWithContent(WebTemplateParser.CssBlockWithContentContext ctx) {
-
         CssBlockNode node = new CssBlockNode(ctx.getStart().getLine());
 
         for (WebTemplateParser.StyleAttributeContext attrCtx : ctx.styleAttribute()) {
@@ -599,7 +597,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
             SymbolEntry e = symTab.lookup(var);
 
-            if (e == null) {
+            if (e == null && !flaskVariables.contains(var)){
 
                 System.err.println(
                         "Undefined variable in Jinja if: "
@@ -650,7 +648,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
             SymbolEntry e = symTab.lookup(var);
 
-            if (e == null) {
+            if (e == null && !flaskVariables.contains(var)) {
 
                 System.err.println(
                         "Undefined variable in Jinja elif: "
@@ -686,12 +684,8 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
         symTab.enterscope("jinja_For");
 
-        JinjaForNode node =
-                new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
+        JinjaForNode node = new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
 
-        // =========================
-        // 1. handle loop variables
-        // =========================
         WebTemplateParser.ForTargetListContext list = ctx.forTargetList();
 
         for (int i = 0; i < list.getChildCount(); i++) {
@@ -720,7 +714,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
             SymbolEntry e = symTab.lookup(var);
 
-            if (e == null) {
+            if (e == null && !flaskVariables.contains(var)) {
                 System.err.println(
                         "Undefined iterable variable: " +
                                 var +
@@ -773,10 +767,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         if (node == null)
             return new PrimitiveType("UNKNOWN");
 
-        // =========================
-        // HTML / TEXT
-        // =========================
-
         if (node instanceof TextNode)
             return new PrimitiveType("STRING");
 
@@ -786,26 +776,15 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         if (node instanceof AttributeNode)
             return new PrimitiveType("STRING");
 
-        // =========================
-        // CSS
-        // =========================
-
         if (node instanceof CssValueNode)
             return new PrimitiveType("STRING");
 
         if (node instanceof CssConditionNode)
             return new PrimitiveType("BOOL");
 
-        // =========================
-        // Jinja expressions
-        // =========================
         if (node instanceof JinjaExprNode exprNode)
         {
             String text = exprNode.getExpr().trim();
-
-            // =========================
-            // literals
-            // =========================
 
             if (text.matches("\\d+\\.\\d+"))
                 return new PrimitiveType("DOUBLE");
@@ -824,10 +803,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 return new PrimitiveType("STRING");
             }
 
-            // =========================
-            // arithmetic expressions
-            // =========================
-
             if (
                     text.contains("+") ||
                             text.contains("-") ||
@@ -842,10 +817,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 return new PrimitiveType("INT");
             }
 
-            // =========================
-            // comparison expressions
-            // =========================
-
             if (
                     text.contains("==") ||
                             text.contains("!=") ||
@@ -858,10 +829,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 return new PrimitiveType("BOOL");
             }
 
-            // =========================
-            // logical expressions
-            // =========================
-
             if (
                     text.contains(" and ") ||
                             text.contains(" or ") ||
@@ -871,10 +838,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 return new PrimitiveType("BOOL");
             }
 
-            // =========================
-            // variable lookup
-            // =========================
-
             SymbolEntry e = symTab.lookup(text);
 
             if (e != null && e.getType() != null)
@@ -883,36 +846,20 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
             return new PrimitiveType("UNKNOWN");
         }
 
-        // =========================
-        // Jinja set
-        // =========================
-
         if (node instanceof JinjaSetNode setNode)
         {
             return resolveType(setNode.getValue());
         }
-
-        // =========================
-        // Jinja if
-        // =========================
 
         if (node instanceof JinjaIfNode)
         {
             return new PrimitiveType("BOOL");
         }
 
-        // =========================
-        // Jinja for
-        // =========================
-
         if (node instanceof JinjaForNode)
         {
             return new PrimitiveType("ITERABLE");
         }
-
-        // =========================
-        // HTML nodes
-        // =========================
 
         if (
                 node instanceof HtmlElementNode ||
@@ -923,10 +870,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         {
             return new PrimitiveType("HTML");
         }
-
-        // =========================
-        // CSS nodes
-        // =========================
 
         if (
                 node instanceof CssRuleNode ||
@@ -1077,7 +1020,9 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     public WebASTNode visitAtomIdJinja(WebTemplateParser.AtomIdJinjaContext ctx) {
         String name = ctx.getText();
         SymbolEntry e = symTab.lookup(name);
-        if (e == null) {
+
+        if (e == null && !flaskVariables.contains(name)) {
+
             System.err.println(
                     "Undefined variable: "
                             + name +
@@ -1085,7 +1030,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                             + ctx.getStart().getLine()
             );
         }
-
         return new JinjaExprNode(name, ctx.getStart().getLine());
     }
     @Override
@@ -1211,28 +1155,26 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     public String toString() {
         return super.toString();
     }
-    private List<String> extractVariables(String text) {
 
+    private List<String> extractVariables(String text) {
         List<String> vars = new ArrayList<>();
         if (text == null || text.isEmpty()) return vars;
 
-        // remove Jinja syntax
         text = text.replace("{{", "")
                 .replace("}}", "")
                 .replace("{%", "")
                 .replace("%}", "");
 
-        // regex لاستخراج identifiers فقط
         java.util.regex.Pattern p =
-                java.util.regex.Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
+                java.util.regex.Pattern.compile("\\b[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)*\\b");
 
         java.util.regex.Matcher m = p.matcher(text);
 
         while (m.find()) {
+            String fullMatch = m.group();
 
-            String var = m.group();
+            String var = fullMatch.split("\\.")[0];
 
-            // skip reserved keywords
             if (var.equals("if") || var.equals("else") || var.equals("elif") ||
                     var.equals("and") || var.equals("or") || var.equals("not") ||
                     var.equals("True") || var.equals("False") || var.equals("None") ||
@@ -1247,39 +1189,39 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
         return vars;
     }
-    private String extractVariable(String text)
-    {
+
+    private String extractVariable(String text) {
         if (text == null) return null;
 
         text = text.trim();
 
-        if (text.startsWith("{{") && text.endsWith("}}"))
-        {
+        if (text.startsWith("{{") && text.endsWith("}}")) {
             text = text.substring(2, text.length() - 2).trim();
         }
 
         String[] parts = text.split("\\|");
         return parts[0].trim();
     }
+
     private void validateExpressionVariables(String text, int line) {
+        if (text != null && text.contains("|")) {
+            text = text.split("\\|")[0].trim() + "}}";
+        }
 
         List<String> vars = extractVariables(text);
 
         for (String var : vars) {
-
             SymbolEntry e = symTab.lookup(var);
 
-            if (e == null) {
-
+            if (e == null && !flaskVariables.contains(var)) {
                 System.err.println(
-                        "Undefined variable: "
-                                + var +
-                                " line "
-                                + line
+                        " Flask Context Error: Undefined variable '" + var +
+                                "' used in HTML template (Never passed from Flask) at line " + line
                 );
             }
         }
-    }
+    }}
 
-}
+
+
 

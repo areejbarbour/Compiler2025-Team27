@@ -1,6 +1,4 @@
 package visitor;//package visitor;
-import antlr.pythonParser;
-import antlr.pythonParserBaseVisitor;
 import ast.paython.*;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.RuleNode;
@@ -8,6 +6,8 @@ import symbol_table.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
@@ -16,6 +16,12 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     private List<String> semanticErrors =
             new ArrayList<>();
 
+    public static Set<String> flaskVariables =
+            new HashSet<>();
+
+    public static Set<String> getFlaskVariables() {
+        return flaskVariables;
+    }
     @Override
     public ASTNode visitProg(pythonParser.ProgContext ctx) {
         ProgramNode program = new ProgramNode(ctx.start.getLine());
@@ -329,25 +335,17 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         String name = ctx.ID().getText();
         ASTNode value = visit(ctx.expr());
-        if (value == null)
-        {
+
+        if (value == null) {
             semanticErrors.add(
                     "Semantic Error: null value for '"
-                            + name + "' (line " + ctx.start.getLine() + ")"
+                            + name + "' (line "
+                            + ctx.start.getLine() + ")"
             );
         }
-        SymbolEntry param = symTab.lookup(name);
 
-        if (param == null)
-        {
-            System.err.println(
-                    "Warning: unknown keyword argument '"
-                            + name + "' (line " +  ctx.start.getLine()  + ")"
-            );
-        }
         return new KeywordArgNode(name, value);
     }
-
     @Override
     public ASTNode visitImportStmt(pythonParser.ImportStmtContext ctx) {
         symTab.insert("Flask", SymbolEntry.SymbolKind.CLASS);
@@ -591,25 +589,28 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         return new StringNode(text, ctx.start.getLine());
     }
-
     @Override
     public ASTNode visitID(pythonParser.IDContext ctx) {
+
         String name = ctx.getText();
+
+        System.out.println("VISIT ID = " + name);
+
         int line = ctx.start.getLine();
 
-        SymbolEntry entry =
-                symTab.lookup(name);
+        SymbolEntry entry = symTab.lookup(name);
 
         if (entry == null)
         {
-           semanticErrors.add(
+            semanticErrors.add(
                     "Semantic Error: variable '"
                             + name
                             + "' not defined at line "
                             + line
             );
         }
-        return new VariableNode(ctx.getText(), ctx.start.getLine());
+
+        return new VariableNode(name, line);
     }
 
     @Override
@@ -642,12 +643,36 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         FunctionCallNode node = new FunctionCallNode(ctx.start.getLine());
 
         ASTNode function = visit(ctx.expr());
+        System.out.println(
+                "FUNCTION NODE = "
+                        + function.getClass().getSimpleName()
+        );
         if (function != null) {
-            node.addChild(function);
+            node.setFunctionTarget(function);
         }
         if (function instanceof VariableNode varNode)
         {
             String functionName = varNode.getName();
+            if (functionName.equals("render_template")) {
+
+                if (ctx.args() != null) {
+
+                    for (pythonParser.ArgsContext argCtx : ctx.args()) {
+
+                        ASTNode argNode = visit(argCtx);
+
+                        if (argNode instanceof KeywordArgNode kw) {
+
+                            flaskVariables.add(kw.getName());
+
+                            System.out.println(
+                                    "Flask Variable Found: "
+                                            + kw.getName()
+                            );
+                        }
+                    }
+                }
+            }
 
             SymbolEntry entry =
                     symTab.lookup(functionName);
@@ -662,13 +687,14 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
                 );
             }
             else if (
-                    entry.getKind()
-                            != SymbolEntry.SymbolKind.FUNCTION
+                    entry.getKind() != SymbolEntry.SymbolKind.FUNCTION
+                            &&
+                            entry.getKind() != SymbolEntry.SymbolKind.CLASS
             )
             {
                 System.err.println(
                         "'" + functionName +
-                                "' is not a function (line " +
+                                "' is not callable (line " +
                                 ctx.start.getLine() + ")"
                 );
             }
@@ -678,7 +704,7 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
             for (pythonParser.ArgsContext argCtx : ctx.args()) {
                 ASTNode arg = visit(argCtx);
                 if (arg != null) {
-                    node.addChild(arg);
+                    node.addArgument(arg);
                 }
             }
         }
@@ -804,4 +830,5 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
         return new PrimitiveType("UNKNOWN");
     }
+
 }

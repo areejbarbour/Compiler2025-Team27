@@ -10,6 +10,10 @@ public class KeywordArgNode extends ASTNode {
         addChild(value);
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public void print(String indent) {
         System.out.println(

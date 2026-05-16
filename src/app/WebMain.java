@@ -1,8 +1,7 @@
 package app;
 
-import antlr.WebTemplateLexer;
-import antlr.WebTemplateParser;
 import org.antlr.v4.runtime.*;
+import visitor.PythonASTBuilderVisitor;
 import visitor.WebASTBuilderVisitor;
 
 import static org.antlr.v4.runtime.CharStreams.*;
@@ -45,25 +44,29 @@ public class WebMain {
         // ✅ FIX: entry point is document not template
         WebTemplateParser.DocumentContext tree = parser.document();
 
-        System.out.println("\nParse Tree:");
-        System.out.println(tree.toStringTree(parser));
+        //System.out.println("\nParse Tree:");
+        //System.out.println(tree.toStringTree(parser));
         if (parser.getNumberOfSyntaxErrors() == 0) {
 
-            WebASTBuilderVisitor visitor =
-                    new WebASTBuilderVisitor();
+            System.out.println("TEST:");
+            System.out.println(PythonASTBuilderVisitor.getFlaskVariables());
 
-            // 🔥 IMPORTANT: build AST + fill symbol table
+            WebASTBuilderVisitor visitor =
+                    new WebASTBuilderVisitor(
+                            PythonASTBuilderVisitor.getFlaskVariables()
+                    );
+
             visitor.visit(tree);
 
-            // print symbol table
             visitor.symTab.print();
 
             System.out.println("\nSuccessful grammatical analysis");
+
 
         } else {
             System.err.println("\nSyntax errors found");
         }
 
 
-    }
-}
+    }}
+
