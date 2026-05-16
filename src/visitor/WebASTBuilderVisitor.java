@@ -187,43 +187,32 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     @Override
     public WebASTNode visitHtmlAttributeBoolean(WebTemplateParser.HtmlAttributeBooleanContext ctx) {
         String name = ctx.TAG_ATTR_NAME().getText();
-
         String value = "true";
-
         return new AttributeNode(name, value, ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitAttrValueSingle(WebTemplateParser.AttrValueSingleContext ctx) {
-
         String text = ctx.ATTR_VALUE_SINGLE().getText();
-
         String value = text.substring(1, text.length() - 1);
-
         return new ValueNode(value, ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitAttrValueDouble(WebTemplateParser.AttrValueDoubleContext ctx) {
-
         String text = ctx.ATTR_VALUE_DOUBLE().getText();
-
         String value = text.substring(1, text.length() - 1);
-
         return new ValueNode(value, ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitAttrValueUnquoted(WebTemplateParser.AttrValueUnquotedContext ctx) {
-
         String value = ctx.ATTR_VALUE_UNQUOTED().getText();
-
         return new ValueNode(value, ctx.getStart().getLine());
     }
 
     @Override
     public WebASTNode visitCssBlockWithContent(WebTemplateParser.CssBlockWithContentContext ctx) {
-
         CssBlockNode node = new CssBlockNode(ctx.getStart().getLine());
 
         for (WebTemplateParser.StyleAttributeContext attrCtx : ctx.styleAttribute()) {
@@ -686,12 +675,8 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
         symTab.enterscope("jinja_For");
 
-        JinjaForNode node =
-                new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
+        JinjaForNode node = new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
 
-        // =========================
-        // 1. handle loop variables
-        // =========================
         WebTemplateParser.ForTargetListContext list = ctx.forTargetList();
 
         for (int i = 0; i < list.getChildCount(); i++) {
@@ -773,10 +758,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         if (node == null)
             return new PrimitiveType("UNKNOWN");
 
-        // =========================
-        // HTML / TEXT
-        // =========================
-
         if (node instanceof TextNode)
             return new PrimitiveType("STRING");
 
@@ -786,26 +767,15 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         if (node instanceof AttributeNode)
             return new PrimitiveType("STRING");
 
-        // =========================
-        // CSS
-        // =========================
-
         if (node instanceof CssValueNode)
             return new PrimitiveType("STRING");
 
         if (node instanceof CssConditionNode)
             return new PrimitiveType("BOOL");
 
-        // =========================
-        // Jinja expressions
-        // =========================
         if (node instanceof JinjaExprNode exprNode)
         {
             String text = exprNode.getExpr().trim();
-
-            // =========================
-            // literals
-            // =========================
 
             if (text.matches("\\d+\\.\\d+"))
                 return new PrimitiveType("DOUBLE");
@@ -824,10 +794,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 return new PrimitiveType("STRING");
             }
 
-            // =========================
-            // arithmetic expressions
-            // =========================
-
             if (
                     text.contains("+") ||
                             text.contains("-") ||
@@ -842,10 +808,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 return new PrimitiveType("INT");
             }
 
-            // =========================
-            // comparison expressions
-            // =========================
-
             if (
                     text.contains("==") ||
                             text.contains("!=") ||
@@ -858,10 +820,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 return new PrimitiveType("BOOL");
             }
 
-            // =========================
-            // logical expressions
-            // =========================
-
             if (
                     text.contains(" and ") ||
                             text.contains(" or ") ||
@@ -871,10 +829,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                 return new PrimitiveType("BOOL");
             }
 
-            // =========================
-            // variable lookup
-            // =========================
-
             SymbolEntry e = symTab.lookup(text);
 
             if (e != null && e.getType() != null)
@@ -883,36 +837,20 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
             return new PrimitiveType("UNKNOWN");
         }
 
-        // =========================
-        // Jinja set
-        // =========================
-
         if (node instanceof JinjaSetNode setNode)
         {
             return resolveType(setNode.getValue());
         }
-
-        // =========================
-        // Jinja if
-        // =========================
 
         if (node instanceof JinjaIfNode)
         {
             return new PrimitiveType("BOOL");
         }
 
-        // =========================
-        // Jinja for
-        // =========================
-
         if (node instanceof JinjaForNode)
         {
             return new PrimitiveType("ITERABLE");
         }
-
-        // =========================
-        // HTML nodes
-        // =========================
 
         if (
                 node instanceof HtmlElementNode ||
@@ -923,10 +861,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         {
             return new PrimitiveType("HTML");
         }
-
-        // =========================
-        // CSS nodes
-        // =========================
 
         if (
                 node instanceof CssRuleNode ||
@@ -1216,13 +1150,11 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         List<String> vars = new ArrayList<>();
         if (text == null || text.isEmpty()) return vars;
 
-        // remove Jinja syntax
         text = text.replace("{{", "")
                 .replace("}}", "")
                 .replace("{%", "")
                 .replace("%}", "");
 
-        // regex لاستخراج identifiers فقط
         java.util.regex.Pattern p =
                 java.util.regex.Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
 
@@ -1231,8 +1163,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         while (m.find()) {
 
             String var = m.group();
-
-            // skip reserved keywords
             if (var.equals("if") || var.equals("else") || var.equals("elif") ||
                     var.equals("and") || var.equals("or") || var.equals("not") ||
                     var.equals("True") || var.equals("False") || var.equals("None") ||
