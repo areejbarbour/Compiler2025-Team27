@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<!-- اختبار 1: Not Iterable -->
+{% set count = 10 %}
+{% for item in count %}
+<p>{{ item }}</p>
+{% endfor %}
+
+<!-- اختبار 2: Not Callable -->
+{% set total = "10" %}
+<p>{{ total() }}</p>
+
+<!-- اختبار 3: Not Subscriptable -->
+{% set age = 30 %}
+<p>{{ age[0] }}</p>
+
+<!-- اختبار 4: حالة سليمة - نص قابل للتكرار والفهرسة (بدون list literal) -->
+{% set text = "abc" %}
+{% for c in text %}
+<p>{{ c }}</p>
+{% endfor %}
+<p>{{ text[0] }}</p>
+
+</body>
+</html>
