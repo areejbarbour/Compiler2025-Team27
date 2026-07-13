@@ -333,7 +333,11 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         SymbolEntry entry = symTab.lookup(name);
 
         if (entry == null) {
-            semanticErrors.add("Semantic Error: variable '" + name + "' not defined at line " + line);
+            if (symTab.lookupAnyScope(name) != null) {
+                semanticErrors.add("Semantic Error: variable '" + name + "' is out of scope at line " + line);
+            } else {
+                semanticErrors.add("Semantic Error: variable '" + name + "' not defined at line " + line);
+            }
         } else if (!isSubscriptableType(entry.getType())) {
             semanticErrors.add("Semantic Error: '" + toPythonTypeName(entry.getType()) +
                     "' object is not subscriptable at line " + line);
@@ -351,13 +355,18 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         return new StringNode(text.substring(1, text.length() - 1), ctx.start.getLine());
     }
 
-    // ✅ التعديل هنا: إضافة طباعة اسم المتغير عند زيارته
     @Override
     public ASTNode visitID(pythonParser.IDContext ctx) {
         String name = ctx.getText();
-        System.out.println("VISIT ID = " + name); // <--- السطر المضاف
         int line = ctx.start.getLine();
-        if (symTab.lookup(name) == null) semanticErrors.add("Semantic Error: variable '" + name + "' not defined at line " + line);
+
+        if (symTab.lookup(name) == null) {
+            if (symTab.lookupAnyScope(name) != null) {
+                semanticErrors.add("Semantic Error: variable '" + name + "' is out of scope at line " + line);
+            } else {
+                semanticErrors.add("Semantic Error: variable '" + name + "' not defined at line " + line);
+            }
+        }
         return new VariableNode(name, line);
     }
 
@@ -368,12 +377,17 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         int line = ctx.start.getLine();
         if (target instanceof VariableNode) {
             String targetName = ((VariableNode) target).getName();
-            if (symTab.lookup(targetName) == null) semanticErrors.add("Semantic Error: '" + targetName + "' not defined at line " + line);
+            if (symTab.lookup(targetName) == null) {
+                if (symTab.lookupAnyScope(targetName) != null) {
+                    semanticErrors.add("Semantic Error: '" + targetName + "' is out of scope at line " + line);
+                } else {
+                    semanticErrors.add("Semantic Error: '" + targetName + "' not defined at line " + line);
+                }
+            }
         }
         return new AttributeAccessNode(target, attr, line);
     }
 
-    // ✅ التعديل هنا: إضافة طباعة نوع الـ Node واستخراج متغيرات Flask
     @Override
     public ASTNode visitFunctionCall(pythonParser.FunctionCallContext ctx) {
         FunctionCallNode node = new FunctionCallNode(ctx.start.getLine());

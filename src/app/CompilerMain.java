@@ -9,6 +9,8 @@ import ast.paython.ASTPrinter;
 import org.antlr.v4.runtime.*;
 import visitor.PythonASTBuilderVisitor;
 import visitor.WebASTBuilderVisitor;
+import ast.web.WebASTNode;
+import ast.web.WebASTPrinter;
 
 import static org.antlr.v4.runtime.CharStreams.fromFileName;
 
@@ -16,12 +18,11 @@ public class CompilerMain {
 
     public static void main(String[] args) throws Exception {
 
-        /* =====================================================
-                           PYTHON ANALYSIS
-        ====================================================== */
+
         System.out.println("===== PYTHON ANALYSIS =====");
 
-        String pythonFile = "example/python_type_error_by_areej.py";
+          String pythonFile = "example/python_type_error_by_areej.py";
+        //String pythonFile = "example/python_scope_error_test.py";
 //        String pythonFile = "example/test.py";
         CharStream pythonInput = CharStreams.fromFileName(pythonFile);
 
@@ -34,7 +35,6 @@ public class CompilerMain {
         for (Token t : pyTokens.getTokens()) {
             if (t.getChannel() == Token.DEFAULT_CHANNEL) {
                 String tokenName = pythonLexer.VOCABULARY.getSymbolicName(t.getType());
-                // تم إضافة مسافتين في البداية لتنسيق الأكواد
                 System.out.printf("  %-15s -> '%s'%n", tokenName, t.getText().replace("\n","\\n").replace("\r",""));
             }
         }
@@ -70,12 +70,11 @@ public class CompilerMain {
         System.out.println("\n===== Python Semantic Errors =====");
         pythonVisitor.printsemanticErrors();
 
-        /* =====================================================
-                             WEB ANALYSIS
-        ====================================================== */
+
         System.out.println("\n===== WEB ANALYSIS =====");
 
-        String htmlFile = "example/web_type_error_by_areej.html";
+        //String htmlFile = "templates/products.html";
+          String htmlFile = "example/web_type_error_by_areej.html";
 //        String htmlFile = "templates/products.html";
         CharStream webInput = fromFileName(htmlFile);
         WebTemplateLexer webLexer = new WebTemplateLexer(webInput);
@@ -87,7 +86,6 @@ public class CompilerMain {
         for(Token t : webTokens.getTokens()){
             if(t.getChannel() == Token.DEFAULT_CHANNEL){
                 String tokenName = WebTemplateLexer.VOCABULARY.getSymbolicName(t.getType());
-                // تم إضافة مسافتين في البداية لتنسيق الأكواد
                 System.out.printf("  %-20s -> '%s'%n", tokenName, t.getText().replace("\n","\\n"));
             }
         }
@@ -95,13 +93,14 @@ public class CompilerMain {
         webTokens.seek(0);
         WebTemplateParser webParser = new WebTemplateParser(webTokens);
         WebTemplateParser.DocumentContext webTree = webParser.document();
+        System.out.println("\n Web Parse Tree ");
+        System.out.println(webTree.toStringTree(webParser));
 
         if(webParser.getNumberOfSyntaxErrors() != 0){
             System.err.println("\nWeb Syntax Errors Found.");
             return;
         }
 
-        // الأقسام الجديدة المطلوبة قبل بناء الـ Web AST
         System.out.println("TEST:");
         System.out.println(PythonASTBuilderVisitor.getFlaskVariables());
         System.out.println("===== RECEIVED FROM PYTHON =====");
@@ -111,9 +110,10 @@ public class CompilerMain {
                 pythonVisitor.symTab,
                 PythonASTBuilderVisitor.getFlaskVariables()
         );
-        webVisitor.visit(webTree);
+        WebASTNode webAST = webVisitor.visit(webTree);
 
-      //  System.out.println("\n===== SYMBOL TABLE =====");
+        System.out.println("\n Web Abstract Syntax Tree (AST)");
+        WebASTPrinter.printAST(webAST);
         webVisitor.symTab.print();
 
         System.out.println("\nSuccessful grammatical analysis");

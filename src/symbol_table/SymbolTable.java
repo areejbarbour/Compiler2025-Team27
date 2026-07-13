@@ -71,5 +71,13 @@ public class SymbolTable {
         }
     }
 
+    public SymbolEntry lookupAnyScope(String name) {
+        for (Scope s : allScopes) {
+            SymbolEntry e = s.lookupCurrentScope(name);
+            if (e != null) return e;
+        }
+        return null;
+    }
+
 
 }

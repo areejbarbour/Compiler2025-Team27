@@ -19,7 +19,7 @@ import java.util.HashSet;
 
 public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNode> {
 
-    private List<String> semanticErrors = new ArrayList<>(); // ✅ قائمة الأخطاء
+    private List<String> semanticErrors = new ArrayList<>();
     public SymbolTable symTab;
     private Set<String> flaskVariables = new HashSet<>();
 
@@ -313,13 +313,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         symTab.enterscope("jinja-if");
         WebASTNode condition = visit(ctx.expr());
         JinjaIfNode node = new JinjaIfNode(condition, ctx.getStart().getLine());
-        List<String> vars = extractVariables(ctx.expr().getText());
-        for (String var : vars) {
-            SymbolEntry e = symTab.lookup(var);
-            if (e == null && !flaskVariables.contains(var)) {
-                semanticErrors.add("Semantic Error: Undefined variable '" + var + "' in Jinja if at line " + ctx.getStart().getLine());
-            }
-        }
         for (WebTemplateParser.ElementContext el : ctx.element()) { WebASTNode child = visit(el); if (child != null) node.body.add(child); }
         for (WebTemplateParser.JinjaElifContext elifCtx : ctx.jinjaElif()) node.elifNodes.add((JinjaIfNode) visit(elifCtx));
         if (ctx.jinjaElse() != null) node.elseNode = (JinjaIfNode) visit(ctx.jinjaElse());
@@ -332,13 +325,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         symTab.enterscope("jinja-elif");
         WebASTNode condition = visit(ctx.expr());
         JinjaIfNode node = new JinjaIfNode(condition, ctx.getStart().getLine());
-        List<String> vars = extractVariables(ctx.expr().getText());
-        for (String var : vars) {
-            SymbolEntry e = symTab.lookup(var);
-            if (e == null && !flaskVariables.contains(var)) {
-                semanticErrors.add("Semantic Error: Undefined variable '" + var + "' in Jinja elif at line " + ctx.getStart().getLine());
-            }
-        }
         for (WebTemplateParser.ElementContext el : ctx.element()) { WebASTNode child = visit(el); if (child != null) node.body.add(child); }
         symTab.exitscope();
         return node;
@@ -357,24 +343,14 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     public WebASTNode visitJinjaForFull(WebTemplateParser.JinjaForFullContext ctx) {
         symTab.enterscope("jinja_For");
         JinjaForNode node = new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
-
-        // ✅ 1. زيارة الـ iterable واستنتاج نوعه
         WebASTNode iterable = visit(ctx.expr());
         Type iterableType = resolveType(iterable);
 
-        // ==========================================
-        // 🌟 Semantic Error #2: Type Error (Not Iterable)
-        // ==========================================
-        // ==========================================
-// 🌟 Type Error — النوع الأول: Not Iterable
-// ==========================================
         if (!isIterableType(iterableType)) {
             semanticErrors.add("Semantic Error: '" + toPythonTypeName(iterableType) +
                     "' object is not iterable at line " + ctx.getStart().getLine());
         }
-        // ==========================================
 
-        // ✅ 2. معالجة متغيرات الحلقة
         WebTemplateParser.ForTargetListContext list = ctx.forTargetList();
         for (int i = 0; i < list.getChildCount(); i++) {
             String text = list.getChild(i).getText();
@@ -385,17 +361,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
             }
         }
 
-        // ✅ 3. التحقق من المتغيرات في الـ iterable
-        String exprText = ctx.getChild(ctx.getChildCount() - 1).getText();
-        List<String> vars = extractVariables(exprText);
-        for (String var : vars) {
-            SymbolEntry e = symTab.lookup(var);
-            if (e == null && !flaskVariables.contains(var)) {
-                semanticErrors.add("Semantic Error: Undefined iterable variable '" + var + "' at line " + ctx.getStart().getLine());
-            }
-        }
-
-        // ✅ 4. زيارة جسم الحلقة
         for (WebTemplateParser.ElementContext el : ctx.element()) {
             WebASTNode child = visit(el);
             if (child != null) node.body.add(child);
@@ -599,21 +564,31 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     @Override
     public WebASTNode visitAtomIdJinja(WebTemplateParser.AtomIdJinjaContext ctx) {
         String name = ctx.getText();
+        int line = ctx.getStart().getLine();
         SymbolEntry e = symTab.lookup(name);
         if (e == null && !flaskVariables.contains(name)) {
-            semanticErrors.add("Semantic Error: Undefined variable '" + name + "' at line " + ctx.getStart().getLine());
+            if (symTab.lookupAnyScope(name) != null) {
+                semanticErrors.add("Semantic Error: variable '" + name + "' is out of scope at line " + line);
+            } else {
+                semanticErrors.add("Semantic Error: Undefined variable '" + name + "' at line " + line);
+            }
         }
-        return new JinjaExprNode(name, ctx.getStart().getLine());
+        return new JinjaExprNode(name, line);
     }
 
     @Override
     public WebASTNode visitAtomIdStmt(WebTemplateParser.AtomIdStmtContext ctx) {
         String name = ctx.getText();
+        int line = ctx.getStart().getLine();
         SymbolEntry e = symTab.lookup(name);
         if (e == null) {
-            semanticErrors.add("Semantic Error: Undefined variable '" + name + "' at line " + ctx.getStart().getLine());
+            if (symTab.lookupAnyScope(name) != null) {
+                semanticErrors.add("Semantic Error: variable '" + name + "' is out of scope at line " + line);
+            } else {
+                semanticErrors.add("Semantic Error: Undefined variable '" + name + "' at line " + line);
+            }
         }
-        return new JinjaExprNode(name, ctx.getStart().getLine());
+        return new JinjaExprNode(name, line);
     }
 
     @Override
@@ -660,7 +635,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     @Override
     public String toString() { return super.toString(); }
 
-    // ✅ دالة طباعة الأخطاء في النهاية
     public void printSemanticErrors() {
         String RED = "\u001B[31m";
         String RESET = "\u001B[0m";
@@ -701,11 +675,15 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         for (String var : vars) {
             SymbolEntry e = symTab.lookup(var);
             if (e == null && !flaskVariables.contains(var)) {
-                semanticErrors.add("Semantic Error: Flask variable '" + var + "' is not passed from render_template at line " + line);
+                if (symTab.lookupAnyScope(var) != null) {
+                    semanticErrors.add("Semantic Error: variable '" + var + "' is out of scope at line " + line);
+                } else {
+                    semanticErrors.add("Semantic Error: Flask variable '" + var + "' is not passed from render_template at line " + line);
+                }
             }
         }
 
-        checkTypeUsageErrors(text, line);   // ⬅️ السطر الوحيد المُضاف
+        checkTypeUsageErrors(text, line);
     }
 
     private Type inferElementType(Type iterableType) {
@@ -764,7 +742,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     private void checkTypeUsageErrors(String text, int line) {
         if (text == null || text.isEmpty()) return;
 
-        // 🌟 Type Error — النوع الثاني: Not Callable
         java.util.regex.Matcher callMatcher =
                 java.util.regex.Pattern.compile("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(").matcher(text);
         while (callMatcher.find()) {
@@ -776,7 +753,6 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
             }
         }
 
-        // 🌟 Type Error — النوع الثالث: Not Subscriptable
         java.util.regex.Matcher indexMatcher =
                 java.util.regex.Pattern.compile("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\[").matcher(text);
         while (indexMatcher.find()) {

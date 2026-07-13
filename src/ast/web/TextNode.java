@@ -9,9 +9,15 @@ public class TextNode extends WebASTNode {
         this.text = text;
     }
 
+//    @Override
+//    public void print(String indent) {
+//        System.out.println(indent + nodeName + " : \"" + text + "\"");
+//    }
+
     @Override
     public void print(String indent) {
-        System.out.println(indent + nodeName + " : \"" + text + "\"");
+        if (text == null || text.trim().isEmpty()) return;   // ✅ السطر المُضاف: تجاهل النص الفاضي/المسافات بس
+        System.out.println(indent + "Text : \"" + text + "\"");
     }
 
 }
