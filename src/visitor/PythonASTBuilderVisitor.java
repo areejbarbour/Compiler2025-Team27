@@ -15,9 +15,9 @@ import java.util.Set;
 public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
     public SymbolTable symTab = new SymbolTable();
-    private List<String> semanticErrors = new ArrayList<>();
+    private Set<String> semanticErrors = new HashSet<>();
     public static Set<String> flaskVariables = new HashSet<>();
-
+    private boolean insideFunctionCall = false;
     public static Set<String> getFlaskVariables() {
         return flaskVariables;
     }
@@ -219,14 +219,30 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
 
     @Override
     public ASTNode visitImportStmt(pythonParser.ImportStmtContext ctx) {
-        symTab.insert("Flask", SymbolEntry.SymbolKind.CLASS);
-        symTab.insert("app", SymbolEntry.SymbolKind.OBJECT);
-        symTab.insert("request", SymbolEntry.SymbolKind.OBJECT);
-        symTab.insert("render_template", SymbolEntry.SymbolKind.FUNCTION);
-        symTab.insert("redirect", SymbolEntry.SymbolKind.FUNCTION);
-        symTab.insert("url_for", SymbolEntry.SymbolKind.FUNCTION);
-        symTab.insert("print", SymbolEntry.SymbolKind.FUNCTION);
         return visit(ctx.importStatement());
+    }
+    @Override
+    public ASTNode visitImportStatement(pythonParser.ImportStatementContext ctx) {
+        for (int i = 1; i < ctx.ID().size(); i++) {
+            String name = ctx.ID(i).getText();
+            switch (name) {
+
+                case "Flask":
+                    symTab.insert(name, SymbolEntry.SymbolKind.CLASS);
+                    break;
+
+                case "request":
+                    symTab.insert(name, SymbolEntry.SymbolKind.OBJECT);
+                    break;
+
+                case "render_template":
+                case "redirect":
+                case "url_for":
+                    symTab.insert(name, SymbolEntry.SymbolKind.FUNCTION);
+                    break;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -359,14 +375,14 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     public ASTNode visitID(pythonParser.IDContext ctx) {
         String name = ctx.getText();
         int line = ctx.start.getLine();
-
+        if (!insideFunctionCall) {
         if (symTab.lookup(name) == null) {
             if (symTab.lookupAnyScope(name) != null) {
                 semanticErrors.add("Semantic Error: variable '" + name + "' is out of scope at line " + line);
             } else {
                 semanticErrors.add("Semantic Error: variable '" + name + "' not defined at line " + line);
             }
-        }
+        }}
         return new VariableNode(name, line);
     }
 
@@ -380,9 +396,10 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
             if (symTab.lookup(targetName) == null) {
                 if (symTab.lookupAnyScope(targetName) != null) {
                     semanticErrors.add("Semantic Error: '" + targetName + "' is out of scope at line " + line);
-                } else {
-                    semanticErrors.add("Semantic Error: '" + targetName + "' not defined at line " + line);
-                }
+               }
+ //               else {
+//                    semanticErrors.add("Semantic Error: '" + targetName + "' not defined at line " + line);
+//                }
             }
         }
         return new AttributeAccessNode(target, attr, line);
@@ -391,7 +408,9 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
     @Override
     public ASTNode visitFunctionCall(pythonParser.FunctionCallContext ctx) {
         FunctionCallNode node = new FunctionCallNode(ctx.start.getLine());
+        insideFunctionCall = true;
         ASTNode function = visit(ctx.expr());
+        insideFunctionCall = false;
         if (function != null) {
             node.setFunctionTarget(function);
             System.out.println("FUNCTION NODE = " + function.getClass().getSimpleName()); // <--- السطر المضاف

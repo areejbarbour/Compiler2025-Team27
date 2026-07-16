@@ -14,6 +14,7 @@ public class SymbolTable {
 
         // built-in values
         insert("__name__", SymbolEntry.SymbolKind.VARIABLE);
+        insert("print", SymbolEntry.SymbolKind.FUNCTION);
 
     }
 

@@ -21,9 +21,9 @@ public class CompilerMain {
 
         System.out.println("===== PYTHON ANALYSIS =====");
 
-          String pythonFile = "example/python_type_error_by_areej.py";
+       String pythonFile = "example/python_type_error_by_areej.py";
         //String pythonFile = "example/python_scope_error_test.py";
-//        String pythonFile = "example/test.py";
+       // String pythonFile = "example/test.py";
         CharStream pythonInput = CharStreams.fromFileName(pythonFile);
 
         pythonLexer pyLexer = new pythonLexer(pythonInput);

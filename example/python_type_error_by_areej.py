@@ -8,8 +8,10 @@ for i in x:
 x()
 
 print(x[0])
+def ri(w,e):
+    w=2
 
 for i in y:
-    print(i)
+    r(i,5)
 
 print(z[1])

@@ -19,7 +19,7 @@ import java.util.HashSet;
 
 public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNode> {
 
-    private List<String> semanticErrors = new ArrayList<>();
+    private Set<String> semanticErrors = new HashSet<>();
     public SymbolTable symTab;
     private Set<String> flaskVariables = new HashSet<>();
 
@@ -521,15 +521,15 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     @Override
     public WebASTNode visitExprRoot(WebTemplateParser.ExprRootContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprOr(WebTemplateParser.ExprOrContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprOr(WebTemplateParser.ExprOrContext ctx) { return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprAnd(WebTemplateParser.ExprAndContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprAnd(WebTemplateParser.ExprAndContext ctx) {  return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprNot(WebTemplateParser.ExprNotContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprNot(WebTemplateParser.ExprNotContext ctx) { return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprComparisonRoot(WebTemplateParser.ExprComparisonRootContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprComparisonRoot(WebTemplateParser.ExprComparisonRootContext ctx) {  return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprComparison(WebTemplateParser.ExprComparisonContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprComparison(WebTemplateParser.ExprComparisonContext ctx) {  return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
     public WebASTNode visitOpCompareJinja(WebTemplateParser.OpCompareJinjaContext ctx) { return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
@@ -543,15 +543,15 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
     @Override
     public WebASTNode visitOpNotIn(WebTemplateParser.OpNotInContext ctx) { return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprAdd(WebTemplateParser.ExprAddContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprAdd(WebTemplateParser.ExprAddContext ctx) {  return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprMul(WebTemplateParser.ExprMulContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprMul(WebTemplateParser.ExprMulContext ctx) { return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprUnary(WebTemplateParser.ExprUnaryContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprUnary(WebTemplateParser.ExprUnaryContext ctx) {  return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprPostfixRoot(WebTemplateParser.ExprPostfixRootContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprPostfixRoot(WebTemplateParser.ExprPostfixRootContext ctx) { return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
-    public WebASTNode visitExprPostfix(WebTemplateParser.ExprPostfixContext ctx) { validateExpressionVariables(ctx.getText(), ctx.getStart().getLine()); return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
+    public WebASTNode visitExprPostfix(WebTemplateParser.ExprPostfixContext ctx) { return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override
     public WebASTNode visitAtomNumberJinja(WebTemplateParser.AtomNumberJinjaContext ctx) { return new JinjaExprNode(ctx.getText(), ctx.getStart().getLine()); }
     @Override

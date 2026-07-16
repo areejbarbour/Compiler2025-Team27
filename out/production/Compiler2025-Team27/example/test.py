@@ -10,7 +10,7 @@ def view_products():
 @app.route("/add_product", methods=["GET", "POST"])
 def add_product():
     if request.method == "POST":
-        name = request.form.get("name")
+        name = requestr.form.get("name")
         price = request.form.get("price")
         details = request.form.get("details")
         image = request.form.get("image")
