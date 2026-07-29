@@ -41,8 +41,18 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         ASTNode value = visit(ctx.assignment().expr());
         SymbolEntry entry = symTab.lookup(varName);
         if (entry == null) entry = symTab.insert(varName, SymbolEntry.SymbolKind.VARIABLE);
-        Type type = resolveType(value);
-        entry.setType(type);
+
+        Type newType = resolveType(value);
+        Type oldType = entry.getType();
+        boolean isNewVariable = (oldType == null);
+
+        if (!isNewVariable && typesIncompatible(oldType, newType)) {
+            semanticErrors.add("Semantic Error: Type mismatch - cannot assign value of type '"
+                    + toPythonTypeName(newType) + "' to variable '" + varName
+                    + "' previously of type '" + toPythonTypeName(oldType) + "' at line " + line);
+        } else {
+            entry.setType(newType);
+        }
         AssignmentNode node = new AssignmentNode(varName, line);
         if (value != null) node.addChild(value);
         return node;
@@ -194,13 +204,22 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         return node;
     }
 
-    @Override
-    public ASTNode visitKeyValue(pythonParser.KeyValueContext ctx) {
-        KeyValueNode node = new KeyValueNode(ctx.start.getLine());
-        node.addChild(new LiteralNode("STRING", ctx.STRING().getText(), ctx.start.getLine()));
-        node.addChild(visit(ctx.expr()));
-        return node;
-    }
+//    @Override
+//    public ASTNode visitKeyValue(pythonParser.KeyValueContext ctx) {
+//        KeyValueNode node = new KeyValueNode(ctx.start.getLine());
+//        node.addChild(new LiteralNode("STRING", ctx.STRING().getText(), ctx.start.getLine()));
+//        node.addChild(visit(ctx.expr()));
+//        return node;
+//    }
+@Override
+  public ASTNode visitKeyValue(pythonParser.KeyValueContext ctx) {
+    KeyValueNode node = new KeyValueNode(ctx.start.getLine());
+    String rawKey = ctx.STRING().getText();
+    String cleanKey = rawKey.substring(1, rawKey.length() - 1);
+    node.addChild(new LiteralNode("STRING", cleanKey, ctx.start.getLine()));
+    node.addChild(visit(ctx.expr()));
+    return node;
+}
 
     @Override
     public ASTNode visitDefFunction(pythonParser.DefFunctionContext ctx) { return super.visitDefFunction(ctx); }
@@ -272,14 +291,36 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         return node;
     }
 
-    @Override
-    public ASTNode visitComparisonCondition(pythonParser.ComparisonConditionContext ctx) {
-        ASTNode left = visit(ctx.expr(0));
-        ASTNode right = visit(ctx.expr(1));
-        if (left == null || right == null) return null;
-        String operator = ctx.comparison().getText();
-        return new ComparisonConditionNode(left, operator, right);
+//    @Override
+//    public ASTNode visitComparisonCondition(pythonParser.ComparisonConditionContext ctx) {
+//        ASTNode left = visit(ctx.expr(0));
+//        ASTNode right = visit(ctx.expr(1));
+//        if (left == null || right == null) return null;
+//        String operator = ctx.comparison().getText();
+//        return new ComparisonConditionNode(left, operator, right);
+//    }
+@Override
+public ASTNode visitComparisonCondition(pythonParser.ComparisonConditionContext ctx) {
+    ASTNode left = visit(ctx.expr(0));
+    ASTNode right = visit(ctx.expr(1));
+    if (left == null || right == null) return null;
+    String operator = ctx.comparison().getText();
+
+    boolean isOrderingOperator = operator.equals(">") || operator.equals("<")
+            || operator.equals(">=") || operator.equals("<=");
+
+    if (isOrderingOperator) {
+        Type leftType = resolveType(left);
+        Type rightType = resolveType(right);
+        if (typesIncompatible(leftType, rightType)) {
+            semanticErrors.add("Semantic Error: Type mismatch - cannot compare '"
+                    + toPythonTypeName(leftType) + "' with '" + toPythonTypeName(rightType)
+                    + "' using '" + operator + "' at line " + ctx.start.getLine());
+        }
     }
+
+    return new ComparisonConditionNode(left, operator, right);
+}
 
     @Override
     public ASTNode visitIsNotNoneCondition(pythonParser.IsNotNoneConditionContext ctx) { return new IsNotNoneNode(visit(ctx.expr())); }
@@ -497,21 +538,80 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
         }
         if (node instanceof DictNode dictNode) {
 
-            if (dictNode.getChildren().isEmpty())
+            if (dictNode.getChildren().isEmpty()) {
                 return new DictType(
                         new PrimitiveType("UNKNOWN"),
                         new PrimitiveType("UNKNOWN")
                 );
+            }
 
-            KeyValueNode kv = (KeyValueNode) dictNode.getChildren().get(0);
+            KeyValueNode firstKv =
+                    (KeyValueNode) dictNode.getChildren().get(0);
 
-            Type valueType = resolveType(kv.getValue());
+            Type firstValueType = resolveType(firstKv.getValue());
 
-            return new DictType(
-                    new PrimitiveType("STRING"), // key ALWAYS string
-                    valueType
+            DictType dictType = new DictType(
+                    new PrimitiveType("STRING"),
+                    firstValueType
             );
+
+            for (ASTNode child : dictNode.getChildren()) {
+
+                KeyValueNode kv = (KeyValueNode) child;
+
+                ASTNode keyNode = kv.getKey();
+
+                String key = null;
+
+                if (keyNode instanceof LiteralNode literalNode) {
+
+                    Object value = literalNode.getValue();
+
+                    if (value instanceof String) {
+                        key = (String) value;
+                    }
+                }
+
+                if (key != null) {
+
+                    Type valueType = resolveType(kv.getValue());
+
+                    dictType.addFieldType(key, valueType);
+                }
+            }
+
+            return dictType;
         }
+
+        if (node instanceof IndexAccessNode indexNode) {
+
+
+            ASTNode objectNode = indexNode.getChildren().get(0);
+            ASTNode indexNodeValue = indexNode.getChildren().get(1);
+
+            Type objectType = resolveType(objectNode);
+
+            if (objectType instanceof DictType dictType) {
+
+                String key = null;
+
+                if (indexNodeValue instanceof StringNode stringNode) {
+                    key = stringNode.getValue();
+                }
+
+                if (key != null) {
+
+                    Type fieldType = dictType.getFieldType(key);
+
+                    if (fieldType != null) {
+                        return fieldType;
+                    }
+                }
+            }
+
+            return new PrimitiveType("UNKNOWN");
+        }
+
         if (node instanceof VariableNode v) {
             SymbolEntry e = symTab.lookup(v.getName());
 
@@ -579,5 +679,33 @@ public class PythonASTBuilderVisitor extends pythonParserBaseVisitor<ASTNode> {
             };
         }
         return "object";
+    }
+
+private boolean typesIncompatible(Type a, Type b) {
+    if (a == null || b == null) return false;
+
+    if (isIgnorableType(a) || isIgnorableType(b)) return false;
+
+    if (isNumericType(a) && isNumericType(b)) return false;
+
+    return !a.toString().equals(b.toString());
+}
+
+    private boolean isIgnorableType(Type type) {
+        if (type instanceof PrimitiveType p) {
+            return p.name().equals("UNKNOWN") || p.name().equals("NONE");
+        }
+        if (type instanceof ListType l) {
+            return isIgnorableType(l.getElementtype());
+        }
+        if (type instanceof DictType d) {
+            return isIgnorableType(d.getKeyType()) || isIgnorableType(d.getValueType());
+        }
+        return false;
+    }
+
+    private boolean isNumericType(Type type) {
+        return type instanceof PrimitiveType p
+                && (p.name().equals("INT") || p.name().equals("DOUBLE"));
     }
 }

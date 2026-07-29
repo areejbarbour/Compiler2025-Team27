@@ -1,5 +1,5 @@
-
-
+from flask import Flask, render_template
+app = Flask(__name__)
 
 products =[{"name": "Laptop", "price": 1200, "details": "High performance laptop"},{"name": "Phone", "price": 700, "details": "Smartphone with good camera"},{"name": "Headphones", "price": 150, "details": "Noise-cancelling"}]
 
@@ -16,7 +16,7 @@ def add_product(new_product):
 def product_details(product_name):
     found_product = None
     for p in products:
-        if p["name"] == product_name:
+        if p["name"] == 1:
             found_product = p
             break
     return render_template("product_details.html", product=found_product)

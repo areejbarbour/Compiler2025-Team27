@@ -8,7 +8,9 @@ public class StringNode extends ASTNode {
         super("String", line);
         this.value = value;
     }
-
+    public String getValue() {
+        return value;
+    }
     @Override
     public void print(String indent) {
         System.out.println(indent + "String: \"" + value + "\" [line " + lineNumber + "]");
