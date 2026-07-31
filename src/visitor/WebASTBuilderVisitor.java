@@ -76,16 +76,8 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
     @Override
     public WebASTNode visitHtmlElementVoid(WebTemplateParser.HtmlElementVoidContext ctx) {
-        String tagName = ctx.getChild(0).getText();
-        int line = ctx.getStart().getLine();
-        HtmlSelfClosingNode node = new HtmlSelfClosingNode(tagName, line);
-        for (int i = 0; i < ctx.getChildCount(); i++) {
-            if (ctx.getChild(i) instanceof WebTemplateParser.TagAttributeContext) {
-                AttributeNode attr = (AttributeNode) visit(ctx.getChild(i));
-                node.addAttribute(attr);
-            }
-        }
-        return node;
+        // نمرر للقاعدة الداخلية
+        return visit(ctx.htmlVoidTag());
     }
 
     @Override
@@ -109,13 +101,18 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
     @Override
     public WebASTNode visitHtmlVoidTagFull(WebTemplateParser.HtmlVoidTagFullContext ctx) {
-        String tagName = ctx.VOID_TAG_NAME().getText();
+        String tagName = ctx.VOID_TAG_NAME().getText();  // ← هنا الصح: meta
         int line = ctx.getStart().getLine();
-        HtmlVoidNode node = new HtmlVoidNode(tagName, line);
+
+        HtmlSelfClosingNode node = new HtmlSelfClosingNode(tagName, line);
+
         for (WebTemplateParser.TagAttributeContext attrCtx : ctx.tagAttribute()) {
             AttributeNode attr = (AttributeNode) visit(attrCtx);
-            node.addAttribute(attr);
+            if (attr != null) {
+                node.addAttribute(attr);
+            }
         }
+
         return node;
     }
 
@@ -344,6 +341,9 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         symTab.enterscope("jinja_For");
         JinjaForNode node = new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
         WebASTNode iterable = visit(ctx.expr());
+        node.iterable = iterable;   // ← أضف هذا السطر
+
+
         Type iterableType = resolveType(iterable);
 
         if (!isIterableType(iterableType)) {
@@ -764,4 +764,12 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
             }
         }
     }
+
+
+    public List<String> getSemanticErrors() {
+        return new ArrayList<>(semanticErrors);
+    }
+
+
+
 }

@@ -13,5 +13,10 @@ public class DoubleNode extends ASTNode {
     public void print(String indent) {
         System.out.println(indent + "Double: " + value + " [line " + lineNumber + "]");
     }
+
+    public double getValue() {
+        return value;
+    }
+
 }
 

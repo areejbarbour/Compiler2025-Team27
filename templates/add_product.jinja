@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>إضافة منتج</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <h1>إضافة منتج</h1>
+    <form method="POST" action="{{ url_for('add_product') }}" class="product-form">
+        <label>اسم المنتج</label>
+        <input type="text" name="name" required>
+
+        <label>السعر</label>
+        <input type="number" name="price" required>
+
+        <label>التفاصيل</label>
+        <textarea name="details"></textarea>
+
+        <label>رابط الصورة</label>
+        <input type="url" name="image" placeholder="https://example.com/image.jpg">
+        <p class="field-hint">الصق رابط صورة مباشر (URL) ليتم عرضها في القائمة والتفاصيل.</p>
+
+        <button type="submit" class="btn btn-primary">إضافة</button>
+        <a href="{{ url_for('view_products') }}" class="btn btn-secondary">رجوع</a>
+    </form>
+</div>
+</body>
+</html>

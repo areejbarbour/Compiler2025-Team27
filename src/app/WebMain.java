@@ -9,7 +9,7 @@
 //
 //public class WebMain {
 //    public static void main(String[] args) throws Exception {
-//        String filePath = "templates/products.html";
+//        String filePath = "templates/index.jinja";
 ////        String filePath = "example/web_type_error_by_areej.html";
 //        CharStream input = fromFileName(filePath);
 //

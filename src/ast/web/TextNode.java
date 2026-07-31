@@ -20,4 +20,12 @@ public class TextNode extends WebASTNode {
         System.out.println(indent + "Text : \"" + text + "\"");
     }
 
+
+
+    public String getText() {
+        return text;
+    }
+
+
+
 }

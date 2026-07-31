@@ -21,4 +21,11 @@ public abstract class HtmlNode extends WebASTNode {
     public String getTagName() {
         return tagName;
     }
+
+
+    public List<AttributeNode> getAttributes() {
+        return attributes;
+    }
+
+
 }

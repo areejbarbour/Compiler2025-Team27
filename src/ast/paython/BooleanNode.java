@@ -13,4 +13,8 @@ public class BooleanNode extends ASTNode {
     public void print(String indent) {
         System.out.println(indent + "Boolean: " + value + " [line " + lineNumber + "]");
     }
+
+    public boolean getValue() {
+        return value;
+    }
 }

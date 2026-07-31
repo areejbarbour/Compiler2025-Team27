@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>تعديل منتج</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    {% if product %}
+    <h1>تعديل منتج</h1>
+
+    {% if product.image %}
+    <div class="image-preview-box">
+        <p class="preview-label">الصورة الحالية:</p>
+        <img src="{{ product.image }}" alt="{{ product.name }}" class="product-image">
+    </div>
+    {% else %}
+    <div class="image-preview-box">
+        <p class="preview-label">لا توجد صورة حالياً</p>
+        <div class="product-image-placeholder">لا توجد صورة</div>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('edit_product', product_name=product.name) }}" class="product-form">
+        <label>اسم المنتج</label>
+        <input type="text" name="name" value="{{ product.name }}" required>
+
+        <label>السعر</label>
+        <input type="number" name="price" value="{{ product.price }}" required>
+
+        <label>التفاصيل</label>
+        <textarea name="details">{{ product.details }}</textarea>
+
+        <label>رابط الصورة</label>
+        <input type="url" name="image" value="{{ product.image }}" placeholder="https://example.com/image.jpg">
+        <p class="field-hint">عدّل الرابط أعلاه ثم احفظ — ستظهر الصورة الجديدة بعد الحفظ.</p>
+
+        <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+        <a href="{{ url_for('view_products') }}" class="btn btn-secondary">رجوع</a>
+    </form>
+    {% else %}
+    <p>المنتج غير موجود</p>
+    <a href="{{ url_for('view_products') }}" class="btn btn-secondary">رجوع للقائمة</a>
+    {% endif %}
+</div>
+</body>
+</html>

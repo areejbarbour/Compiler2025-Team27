@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>تفاصيل المنتج</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    {% if product %}
+    <h2>{{ product.name }}</h2>
+    {% if product.image %}
+  <img src="{{ product.image }}" alt="{{ product.name }}" class="product-image"
+       onerror="this.onerror=null; this.src='https://placehold.co/280x180/e8eaf0/888?text=No+Image';">
+    {% else %}
+    <div class="product-image-placeholder large">لا توجد صورة</div>
+    {% endif %}
+    <p class="price">السعر: {{ product.price }}</p>
+    <p class="details">{{ product.details }}</p>
+    {% else %}
+    <p>المنتج غير موجود</p>
+    {% endif %}
+    <a href="{{ url_for('view_products') }}" class="btn btn-secondary">رجوع للقائمة</a>
+</div>
+</body>
+</html>

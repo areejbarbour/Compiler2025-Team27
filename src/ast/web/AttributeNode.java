@@ -19,4 +19,11 @@ public class AttributeNode extends WebASTNode {
     public String getName() {
         return name;
     }
+
+
+    public String getValue() {
+        return value;
+    }
+
+
 }

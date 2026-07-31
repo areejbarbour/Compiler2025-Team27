@@ -11,6 +11,14 @@ public class DecorateNode extends ASTNode {
         this.functionName = functionName;
     }
 
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    public String getFunctionName() {
+        return functionName;
+    }
+
     @Override
     public void print(String indent) {
         System.out.println(indent + "Decorator: " + moduleName + "." + functionName);

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>قائمة المنتجات</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <h1>قائمة المنتجات</h1>
+    <a href="{{ url_for('add_product') }}" class="btn btn-primary">إضافة منتج</a>
+
+    <div class="products-list">
+        {% for product in products_list %}
+        <div class="product-card">
+            <img src="{{ product.image }}" alt="{{ product.name }}" class="product-image-thumb"
+                 onerror="this.onerror=null; this.src='https://placehold.co/120x120/e8eaf0/888?text=No+Image';">
+            <div class="product-info">
+                <h3>{{ product.name }}</h3>
+                <p class="price">السعر: {{ product.price }}</p>
+                <p>{{ product.details }}</p>
+                <a href="{{ url_for('product_details', product_name=product.name) }}" class="btn btn-primary">تفاصيل</a>
+                <a href="{{ url_for('edit_product', product_name=product.name) }}" class="btn btn-secondary">تعديل</a>
+                <a href="{{ url_for('delete_product', product_name=product.name) }}" class="btn btn-danger">حذف</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

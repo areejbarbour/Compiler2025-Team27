@@ -708,4 +708,12 @@ private boolean typesIncompatible(Type a, Type b) {
         return type instanceof PrimitiveType p
                 && (p.name().equals("INT") || p.name().equals("DOUBLE"));
     }
+
+
+    public List<String> getSemanticErrors() {
+        return new ArrayList<>(semanticErrors);
+    }
+
+
+
 }

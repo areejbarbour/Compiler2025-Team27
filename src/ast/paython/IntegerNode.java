@@ -12,4 +12,8 @@ public class IntegerNode extends ASTNode {
     public void print(String indent) {
         System.out.println(indent + "Integer: " + value + " [line " + lineNumber + "]");
     }
+
+    public int getValue() {
+        return value;
+    }
 }
