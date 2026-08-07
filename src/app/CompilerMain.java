@@ -13,6 +13,7 @@ import generator.DataExtractor;
 import generator.HtmlGenerator;
 import generator.OutputWriter;
 import org.antlr.v4.runtime.*;
+import server.AppServer;
 import visitor.PythonASTBuilderVisitor;
 import visitor.WebASTBuilderVisitor;
 
@@ -221,9 +222,9 @@ public class CompilerMain {
         writer.writeGeneratedHtml("edit_product.html", editHtml);
         writer.writeGeneratedHtml("product_details.html", detailsHtml);
 
-        // app.py قابل للتشغيل على HTML المولَّد (طلب المعيدة: output يشتغل نظامي)
-        writer.writeRunnableApp();
-        // ملفات داعمة تُنسخ دون معالجة إضافية
+        // ملفات داعمة تُرفَق مع الخرج دون أي معالجة إضافية عليها (نص الدكتورة بالحرف):
+        // app.py (نفس ملف الدخل كما هو) + style.css + script.js
+        writer.copySupportFile("app.py", "app.py");
         writer.copySupportFile("static/style.css", "style.css");
         writer.copySupportFile("static/script.js", "script.js");
 
@@ -239,7 +240,14 @@ public class CompilerMain {
         System.out.println("\n===== DONE =====");
         System.out.println("Check folders: output/  and  compiler_output/");
         System.out.println("Generated: index.html, add_product.html, edit_product.html, product_details.html");
-        System.out.println("Written runnable output/app.py + style.css, script.js");
+        System.out.println("Copied support files: app.py, style.css, script.js");
+
+        // ==================== تشغيل السيرفر (Runtime Regeneration) ====================
+        // بدل نسخ سكربت Python، الجافا نفسها بتشتغل كسيرفر runtime: بتستمع لطلبات
+        // add/edit/delete وبتنادي HtmlGenerator.generate() من جديد كل مرة (نفس محرك
+        // التوليد فوق) عشان يتزامن الخرج مع البيانات — تماماً متل ما وضحت الدكتورة.
+        System.out.println("\n===== STARTING RUNTIME SERVER (Java) =====");
+        AppServer.main(new String[0]);
     }
 
     /**

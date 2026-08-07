@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Semantic Errors Web Test</title>
+</head>
+<body>
+
+<!-- 1) Not iterable: for loop over INT -->
+{% set count = 10 %}
+{% for item in count %}
+<p>{{ item }}</p>
+{% endfor %}
+
+<!-- 2) Not callable: call a STRING -->
+{% set total = "10" %}
+<p>{{ total() }}</p>
+
+<!-- 3) Not subscriptable: index an INT -->
+{% set age = 30 %}
+<p>{{ age[0] }}</p>
+
+<!-- 4) Missing Flask Variable / Undefined variable -->
+<p>{{ missing_flask_var }}</p>
+<p>{{ another_missing }}</p>
+
+<!-- 5) Flask variable not passed from render_template -->
+{% for p in products_list %}
+<div>
+    <h3>{{ p.name }}</h3>
+    <p>{{ p.price }}</p>
+</div>
+{% endfor %}
+
+<!-- 6) Undefined variable inside expression -->
+<p>{{ unknown_product.title }}</p>
+
+<!-- 7) Not iterable again with BOOL-like via set of string used wrong - already covered -->
+
+{% for c in text %}
+<span>{{ c }}</span>
+{% endfor %}
+<p>{{ text[0] }}</p>
+
+</body>
+</html>
