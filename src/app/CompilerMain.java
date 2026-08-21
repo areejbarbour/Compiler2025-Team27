@@ -36,7 +36,8 @@ public class CompilerMain {
         // =====================================================
         System.out.println("===== PYTHON ANALYSIS =====");
 
-        String pythonFile = "app.py";
+      //  String pythonFile = "app.py";
+        String pythonFile = "example/semantic_errors_python.py";
         CharStream pythonInput = CharStreams.fromFileName(pythonFile);
 
         pythonLexer pyLexer = new pythonLexer(pythonInput);
@@ -81,6 +82,10 @@ public class CompilerMain {
 
         System.out.println("\n===== Python Semantic Errors =====");
         pythonVisitor.printsemanticErrors();
+        if (!pythonVisitor.getSemanticErrors().isEmpty()) {
+            System.err.println("\n Python Semantic Errors Found — Code Generation Aborted.");
+            return;
+        }
 
         // =====================================================
         // 2) EXTRACT DATA (Phase 6) — Context من Python AST
@@ -139,6 +144,10 @@ public class CompilerMain {
         System.out.println("\nSuccessful grammatical analysis");
         System.out.println("\n===== Web Semantic Errors =====");
         webVisitor.printSemanticErrors();
+        if (!webVisitor.getSemanticErrors().isEmpty()) {
+            System.err.println("\n Web/Jinja Semantic Errors Found — Code Generation Aborted.");
+            return;
+        }
 
         // =====================================================
         // 4) CODE GENERATION (Phase 7)
@@ -247,7 +256,8 @@ public class CompilerMain {
         // add/edit/delete وبتنادي HtmlGenerator.generate() من جديد كل مرة (نفس محرك
         // التوليد فوق) عشان يتزامن الخرج مع البيانات — تماماً متل ما وضحت الدكتورة.
         System.out.println("\n===== STARTING RUNTIME SERVER (Java) =====");
-        AppServer.main(new String[0]);
+     //   AppServer.main(new String[0]);
+        AppServer.main(new String[]{ pythonFile });
     }
 
     /**

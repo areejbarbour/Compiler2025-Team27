@@ -57,18 +57,23 @@ public class AppServer {
     private WebASTNode productDetailsAst;
 
     public static void main(String[] args) throws Exception {
+        String pythonFile = (args != null && args.length > 0 && args[0] != null && !args[0].isBlank())
+                ? args[0]
+                : "app.py";
+
         AppServer server = new AppServer();
-        server.bootstrap();
+        server.bootstrap(pythonFile);
         server.start();
     }
 
     /**
      * تحليل app.py (Phase 6: DataExtractor) + تحليل قوالب Jinja مرة واحدة عند الإقلاع.
      */
-    private void bootstrap() throws Exception {
-        System.out.println("===== [Java] تحليل app.py واستخراج البيانات الأولية =====");
+    private void bootstrap(String pythonFile) throws Exception {
+        System.out.println("===== [Java]  + pythonFile + واستخراج البيانات الأولية =====");
 
-        String pythonFile = "app.py";
+      //  String pythonFile = "app.py";
+      //  String pythonFile = "example/semantic_errors_python.py";
         CharStream pythonInput = CharStreams.fromFileName(pythonFile);
         pythonLexer pyLexer = new pythonLexer(pythonInput);
         CommonTokenStream pyTokens = new CommonTokenStream(pyLexer);
