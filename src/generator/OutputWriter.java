@@ -388,4 +388,49 @@ public class OutputWriter {
         generationLog.append(message).append("\n");
         System.out.println("[OutputWriter] " + message);
     }
+
+    // ==================== حالة الخطأ النحوي (Syntax Error) ====================
+    /**
+     * يُستخدم فقط عندما يفشل الـ Parser نفسه (syntax error) قبل الوصول لمرحلة
+     * الـ Semantic Analysis أصلاً — بهاي الحالة ما في قائمة أخطاء دلالية لنكتبها.
+     */
+    public void writeSyntaxErrorReport(String phase, String details) throws IOException {
+        StringBuilder report = new StringBuilder();
+        report.append("===== SEMANTIC ANALYSIS REPORT =====\n\n");
+        report.append("Semantic analysis was NOT performed.\n");
+        report.append("Reason: Syntax errors were found during the ").append(phase).append(" parsing phase.\n");
+        if (details != null && !details.isEmpty()) {
+            report.append("Details: ").append(details).append("\n");
+        }
+
+        Path file = compilerOutputDir.resolve("semantic_report.txt");
+        Files.writeString(file, report.toString(), StandardCharsets.UTF_8);
+        log("Written: compiler_output/semantic_report.txt (syntax error - semantic analysis skipped)");
+    }
+
+    // ==================== رسائل الـ generation_log حسب النتيجة ====================
+    public void logGenerationAbortedSyntax(String phase) {
+        generationLog.append("===== GENERATION ABORTED =====\n");
+        generationLog.append("Code generation was NOT performed.\n");
+        generationLog.append("Reason: Syntax errors were found during ").append(phase).append(" parsing.\n");
+        generationLog.append("No files were written to output/.\n");
+        System.out.println("[OutputWriter] Generation aborted due to syntax errors in " + phase + ".");
+    }
+
+    public void logGenerationAborted(int pythonErrorCount, int webErrorCount) {
+        int total = pythonErrorCount + webErrorCount;
+        generationLog.append("===== GENERATION ABORTED =====\n");
+        generationLog.append("Code generation was NOT performed.\n");
+        generationLog.append("Reason: ").append(total).append(" semantic error(s) were found ")
+                .append("(Python: ").append(pythonErrorCount)
+                .append(", Web/Jinja: ").append(webErrorCount).append(").\n");
+        generationLog.append("See compiler_output/semantic_report.txt for the full list of errors.\n");
+        generationLog.append("No files were written to output/.\n");
+        System.out.println("[OutputWriter] Generation aborted due to " + total + " semantic error(s).");
+    }
+
+    public void logGenerationSucceeded() {
+        generationLog.append("\n===== GENERATION COMPLETED SUCCESSFULLY =====\n");
+        generationLog.append("No semantic errors found. All templates were generated and written to output/.\n");
+    }
 }
