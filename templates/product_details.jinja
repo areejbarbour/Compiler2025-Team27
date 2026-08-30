@@ -2,25 +2,40 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تفاصيل المنتج</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<div class="container">
+<div class="container details-page">
     {% if product %}
-    <h2>{{ product.name }}</h2>
-    {% if product.image %}
-  <img src="{{ product.image }}" alt="{{ product.name }}" class="product-image"
-       onerror="this.onerror=null; this.src='https://placehold.co/280x180/e8eaf0/888?text=No+Image';">
+    <div class="details-card">
+        <div class="details-image-wrap">
+            {% if product.image %}
+            <img src="{{ product.image }}" alt="{{ product.name }}" class="details-image"
+                 onerror="this.onerror=null; this.src='https://placehold.co/420x320/e8eaf0/888?text=No+Image';">
+            {% else %}
+            <div class="product-image-placeholder details-placeholder">لا توجد صورة</div>
+            {% endif %}
+        </div>
+        <div class="details-info">
+            <h2 class="details-title">{{ product.name }}</h2>
+            <p class="details-price">{{ product.price }} <span class="currency">ل.س</span></p>
+            <div class="details-divider"></div>
+            <h3 class="details-section-label">الوصف</h3>
+            <p class="details-text">{{ product.details }}</p>
+            <div class="details-actions">
+                <a href="{{ url_for('edit_product', product_name=product.name) }}" class="btn btn-secondary">تعديل</a>
+                <a href="{{ url_for('view_products') }}" class="btn btn-primary">رجوع للقائمة</a>
+            </div>
+        </div>
+    </div>
     {% else %}
-    <div class="product-image-placeholder large">لا توجد صورة</div>
+    <div class="details-empty">
+        <p>المنتج غير موجود</p>
+        <a href="{{ url_for('view_products') }}" class="btn btn-secondary">رجوع للقائمة</a>
+    </div>
     {% endif %}
-    <p class="price">السعر: {{ product.price }}</p>
-    <p class="details">{{ product.details }}</p>
-    {% else %}
-    <p>المنتج غير موجود</p>
-    {% endif %}
-    <a href="{{ url_for('view_products') }}" class="btn btn-secondary">رجوع للقائمة</a>
 </div>
 </body>
 </html>

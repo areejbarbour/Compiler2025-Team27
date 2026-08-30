@@ -62,7 +62,6 @@ Compiler2025-Team27/
 │   └── product_details.jinja
 ├── static/
 │   ├── style.css
-│   └── script.js
 ├── src/
 │   ├── antlr/                      # Generated lexer/parser + .g4 grammars
 │   ├── ast/
@@ -106,7 +105,7 @@ Additional checks: duplicate parameters, function redefinition, undefined functi
 - Extracts the `products` list and route map from the Python AST
 - Evaluates Jinja expressions and expands `{% for %}` loops
 - Emits complete HTML pages under `output/`
-- Copies supporting files (`app.py`, `style.css`, `script.js`) without modification
+- Copies supporting files (`app.py`, `style.css`) without modification
 
 ### 4. Web Interface & Navigation
 - Product list
@@ -139,8 +138,8 @@ output/
 ├── edit_product.html
 ├── product_details.html
 ├── app.py
-├── style.css
-└── script.js
+└──style.css
+
 
 compiler_output/
 ├── ast_python.json

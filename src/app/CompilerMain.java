@@ -49,7 +49,7 @@ public class CompilerMain {
         System.out.println("===== PYTHON ANALYSIS =====");
 
        String pythonFile = "example/semantic_errors_python.py";
-      //  String pythonFile = "app.py";
+//        String pythonFile = "app.py";
 
         CharStream pythonInput = CharStreams.fromFileName(pythonFile);
 
@@ -273,7 +273,7 @@ public class CompilerMain {
 
         writer.copySupportFile("app.py", "app.py");
         writer.copySupportFile("static/style.css", "style.css");
-        writer.copySupportFile("static/script.js", "script.js");
+
 
         writer.logGenerationSucceeded();
         writer.writeGenerationLog();
@@ -281,7 +281,7 @@ public class CompilerMain {
         System.out.println("\n===== DONE =====");
         System.out.println("Check folders: output/  and  compiler_output/");
         System.out.println("Generated: index.html, add_product.html, edit_product.html, product_details.html");
-        System.out.println("Copied support files: app.py, style.css, script.js");
+        System.out.println("Copied support files: app.py, style.css");
 
         // ==================== تشغيل السيرفر (Runtime Regeneration) ====================
         System.out.println("\n===== STARTING RUNTIME SERVER (Java) =====");

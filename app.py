@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
-products = [{"name": "Laptop", "price": 1800, "details": "High performance laptop", "image": "https://sm.mashable.com/t/mashable_sea/feature/r/rip-macboo/rip-macbook-apples-ultimate-lightweight-workhorse_uyk2.2496.png"}, {"name": "Phone", "price": 1300, "details": "Smartphone with good camera", "image": "https://m.media-amazon.com/images/I/71ddhabs2mL._AC_SL1500_.jpg"}, {"name": "Headphones", "price": 300, "details": "Noise-cancelling", "image": "https://www.dealmonday.co.uk/image/cache/wp/gp/Apple/apple-airpods-max-usbc-midnight-3-2400x2400.webp"}]
+products = [{"name": "Laptop", "price": 1800, "details": "High performance laptop", "image": "https://sm.mashable.com/t/mashable_sea/feature/r/rip-macboo/rip-macbook-apples-ultimate-lightweight-workhorse_uyk2.2496.png"}, {"name": "Phone", "price": 1300, "details": "Smartphone with good camera", "image": "https://images.fixje.nl/wp-content/uploads/2025/09/iPhone-17-Pro-Max-Kleuren-1024x683.jpg"}, {"name": "Headphones", "price": 300, "details": "Noise-cancelling", "image": "https://flitsdeal.com/cdn/shop/files/headphoneswirelessmax4_1200x_jpg_78cb2d67-a193-442a-a5b9-fb31cfaa5043.webp?v=1785022462&width=600"}]
 
 @app.route("/")
 @app.route("/products")

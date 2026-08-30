@@ -214,8 +214,7 @@ public class AppServer {
                     respondHtml(exchange, regenerateIndex());
                 } else if (path.equals("/style.css")) {
                     respondFile(exchange, Paths.get("static/style.css"), "text/css");
-                } else if (path.equals("/script.js")) {
-                    respondFile(exchange, Paths.get("static/script.js"), "application/javascript");
+
                 } else if (path.equals("/add_product")) {
                     handleAddProduct(exchange, method);
                 } else if (path.startsWith("/products/")) {
