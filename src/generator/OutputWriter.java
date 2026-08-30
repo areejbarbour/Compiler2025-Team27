@@ -8,10 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 
-/**
- * كاتب ملفات الخرج (HTML المولَّد + تقارير التحليل + AST كـ JSON احترافي).
- * الإصدار المحسّن: يطبع القيم الحقيقية داخل عقد الـ AST (Literals, Names, Expressions...).
- */
+
 public class OutputWriter {
 
     private final Path outputDir;
@@ -29,14 +26,14 @@ public class OutputWriter {
         log("Created directories: output/ and compiler_output/");
     }
 
-    // ==================== كتابة HTML مولّد ====================
+
     public void writeGeneratedHtml(String fileName, String htmlContent) throws IOException {
         Path file = outputDir.resolve(fileName);
         Files.writeString(file, htmlContent, StandardCharsets.UTF_8);
         log("Generated: output/" + fileName + " (" + htmlContent.length() + " chars)");
     }
 
-    // ==================== نسخ الملفات الداعمة ====================
+
     public void copySupportFile(String sourcePath, String destName) throws IOException {
         Path source = Paths.get(sourcePath);
         if (!Files.exists(source)) {
@@ -48,16 +45,13 @@ public class OutputWriter {
         log("Copied: " + sourcePath + " → output/" + destName);
     }
 
-    /**
-     * يكتب app.py قابل للتشغيل داخل output/
-     * يعرض ملفات HTML المولَّدة بشكل نظامي على المتصفح (طلب المعيدة).
-     */
+
     public void writeRunnableApp() throws IOException {
         copySupportFile("output_app_source.py", "app.py");
         log("Copied runnable CRUD app: output_app_source.py -> output/app.py");
     }
 
-    // ==================== تقارير التحليل ====================
+
     public void writeSemanticReport(List<String> pythonErrors, List<String> webErrors) throws IOException {
         StringBuilder report = new StringBuilder();
         report.append("===== SEMANTIC ANALYSIS REPORT =====\n\n");
@@ -91,7 +85,7 @@ public class OutputWriter {
         log("Written: compiler_output/generation_log.txt");
     }
 
-    // ==================== AST كـ JSON احترافي (مع القيم) ====================
+
     public void writePythonAstJson(ASTNode root) throws IOException {
         String json = astToJson(root, 0);
         Path file = compilerOutputDir.resolve("ast_python.json");
@@ -106,10 +100,7 @@ public class OutputWriter {
         log("Written: compiler_output/ast_jinja.json");
     }
 
-    /**
-     * تحويل عقدة AST إلى JSON غني بالقيم (value / name / expression / tag...).
-     * يتعامل مع عقد Python و Jinja/Web معاً لأن WebASTNode يمتد من ASTNode.
-     */
+
     private String astToJson(ASTNode node, int indent) {
         if (node == null) return "null";
 
@@ -121,10 +112,10 @@ public class OutputWriter {
         sb.append(padInner).append("\"node\": \"").append(escape(nodeName(node))).append("\",\n");
         sb.append(padInner).append("\"line\": ").append(getLine(node));
 
-        // ---- خصائص إضافية حسب نوع العقدة ----
+
         appendExtraProps(sb, node, padInner);
 
-        // ---- الأبناء (children + الحقول الخاصة مثل body / iterable) ----
+
         List<ASTNode> children = collectAllChildren(node);
 
         sb.append(",\n").append(padInner).append("\"children\": [");
@@ -143,18 +134,18 @@ public class OutputWriter {
         return sb.toString();
     }
 
-    /** يجمع children العادي + الحقول الخاصة التي لا تُضاف تلقائياً لـ children */
+
     private List<ASTNode> collectAllChildren(ASTNode node) {
         List<ASTNode> result = new ArrayList<>();
 
-        // children الأساسي (مع تجاهل Text الفارغة)
+
         if (node.getChildren() != null) {
             for (ASTNode c : node.getChildren()) {
                 if (c != null && isMeaningfulNode(c)) result.add(c);
             }
         }
 
-        // حقول خاصة لـ Jinja
+
         if (node instanceof JinjaForNode forNode) {
             if (forNode.iterable != null && isMeaningfulNode(forNode.iterable) && !result.contains(forNode.iterable)) {
                 result.add(forNode.iterable);
@@ -186,7 +177,7 @@ public class OutputWriter {
                 result.add(setNode.value);
             }
         } else if (node instanceof HtmlNode htmlNode) {
-            // السمات كعقد أبناء منطقية
+
             if (htmlNode.getAttributes() != null) {
                 for (AttributeNode attr : htmlNode.getAttributes()) {
                     if (attr != null && isMeaningfulNode(attr) && !result.contains(attr)) result.add(attr);
@@ -206,10 +197,7 @@ public class OutputWriter {
         return result;
     }
 
-    /**
-     * يتجاهل عقد Text / JinjaText التي تحتوي فقط مسافات أو أسطر جديدة.
-     * هذا ينظّف الـ AST JSON من الضوضاء ويبقيه احترافياً وقابلاً للقراءة.
-     */
+
     private boolean isMeaningfulNode(ASTNode node) {
         if (node == null) return false;
 
@@ -232,9 +220,9 @@ public class OutputWriter {
         return true;
     }
 
-    /** يضيف الحقول المهمة (value, name, expression, tag...) حسب نوع العقدة */
+
     private void appendExtraProps(StringBuilder sb, ASTNode node, String padInner) {
-        // ---- Python nodes ----
+
         if (node instanceof StringNode s) {
             prop(sb, padInner, "value", s.getValue());
         } else if (node instanceof IntegerNode i) {
@@ -286,7 +274,7 @@ public class OutputWriter {
             } catch (Exception ignored) {}
         }
 
-        // ---- Web / Jinja nodes ----
+
         else if (node instanceof TextNode t) {
             String txt = t.getText();
             if (txt != null && !txt.trim().isEmpty()) {
@@ -389,11 +377,7 @@ public class OutputWriter {
         System.out.println("[OutputWriter] " + message);
     }
 
-    // ==================== حالة الخطأ النحوي (Syntax Error) ====================
-    /**
-     * يُستخدم فقط عندما يفشل الـ Parser نفسه (syntax error) قبل الوصول لمرحلة
-     * الـ Semantic Analysis أصلاً — بهاي الحالة ما في قائمة أخطاء دلالية لنكتبها.
-     */
+
     public void writeSyntaxErrorReport(String phase, String details) throws IOException {
         StringBuilder report = new StringBuilder();
         report.append("===== SEMANTIC ANALYSIS REPORT =====\n\n");
@@ -408,7 +392,7 @@ public class OutputWriter {
         log("Written: compiler_output/semantic_report.txt (syntax error - semantic analysis skipped)");
     }
 
-    // ==================== رسائل الـ generation_log حسب النتيجة ====================
+
     public void logGenerationAbortedSyntax(String phase) {
         generationLog.append("===== GENERATION ABORTED =====\n");
         generationLog.append("Code generation was NOT performed.\n");

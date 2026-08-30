@@ -4,15 +4,13 @@ import java.util.*;
 
 public class Context {
 
-    // templateName → (variableName → value)
-    // مثال: "index.jinja" → { "products_list" → [ {...}, {...} ] }
+
     private Map<String, Map<String, Object>> templateData = new LinkedHashMap<>();
 
-    // كل المتغيرات العامة (مثل products) مع قيمها
+
     private Map<String, Object> globalVariables = new LinkedHashMap<>();
 
-    // اسم دالة الـ view (endpoint) → مسار الراوت كما كُتب في @app.route(...)
-    // مثال: "product_details" → "/products/<product_name>"
+
     private Map<String, String> routes = new LinkedHashMap<>();
 
     public void addRoute(String endpointName, String pathPattern) {

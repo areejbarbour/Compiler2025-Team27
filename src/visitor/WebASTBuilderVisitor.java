@@ -76,7 +76,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
     @Override
     public WebASTNode visitHtmlElementVoid(WebTemplateParser.HtmlElementVoidContext ctx) {
-        // نمرر للقاعدة الداخلية
+
         return visit(ctx.htmlVoidTag());
     }
 
@@ -101,7 +101,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
 
     @Override
     public WebASTNode visitHtmlVoidTagFull(WebTemplateParser.HtmlVoidTagFullContext ctx) {
-        String tagName = ctx.VOID_TAG_NAME().getText();  // ← هنا الصح: meta
+        String tagName = ctx.VOID_TAG_NAME().getText();
         int line = ctx.getStart().getLine();
 
         HtmlSelfClosingNode node = new HtmlSelfClosingNode(tagName, line);
@@ -341,7 +341,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         symTab.enterscope("jinja_For");
         JinjaForNode node = new JinjaForNode(ctx.getText(), ctx.getStart().getLine());
         WebASTNode iterable = visit(ctx.expr());
-        node.iterable = iterable;   // ← أضف هذا السطر
+        node.iterable = iterable;
 
 
         Type iterableType = resolveType(iterable);
@@ -429,7 +429,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
                             text.contains("/")
             )
             {
-                // simple heuristic
+
                 if (text.matches(".*\\d+\\.\\d+.*"))
                     return new PrimitiveType("DOUBLE");
 
@@ -734,11 +734,7 @@ public class WebASTBuilderVisitor extends WebTemplateParserBaseVisitor<WebASTNod
         }
         return "object";
     }
-    /**
-     * فحص نصّي (بنفس أسلوب extractVariables المستخدم بالمشروع) لاكتشاف:
-     * - استدعاء متغيّر عادي كأنه دالة  → Not Callable
-     * - فهرسة متغيّر غير قابل للفهرسة → Not Subscriptable
-     */
+
     private void checkTypeUsageErrors(String text, int line) {
         if (text == null || text.isEmpty()) return;
 

@@ -18,19 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Main مخصص لاختبار أخطاء التحليل الدلالي (Semantic Errors).
- *
- * يشغّل:
- *   1) example/semantic_errors_python.py  → أخطاء Python
- *   2) example/semantic_errors_web.jinja  → أخطاء Web/Jinja
- *
- * ويطبع الأخطاء مجمّعة:
- *   ===== PYTHON SEMANTIC ERRORS =====
- *   ...
- *   ===== WEB / JINJA SEMANTIC ERRORS =====
- *   ...
- */
+
 public class SemanticErrorTestMain {
 
     private static final String PYTHON_TEST_FILE = "example/semantic_errors_python.py";
@@ -47,9 +35,7 @@ public class SemanticErrorTestMain {
         System.out.println(BOLD + CYAN + "   SEMANTIC ERRORS TEST RUNNER" + RESET);
         System.out.println(BOLD + CYAN + "==============================================" + RESET);
 
-        // --------------------------------------------------
-        // 1) PYTHON SEMANTIC ANALYSIS
-        // --------------------------------------------------
+
         System.out.println("\n" + BOLD + ">>> Analyzing Python file: " + PYTHON_TEST_FILE + RESET);
 
         List<String> pythonErrors = runPythonSemantic(PYTHON_TEST_FILE);
@@ -66,13 +52,10 @@ public class SemanticErrorTestMain {
             System.out.println(BOLD + "Total Python errors: " + pythonErrors.size() + RESET);
         }
 
-        // --------------------------------------------------
-        // 2) WEB / JINJA SEMANTIC ANALYSIS
-        // --------------------------------------------------
+
         System.out.println("\n" + BOLD + ">>> Analyzing Web/Jinja file: " + WEB_TEST_FILE + RESET);
 
-        // نمرّر SymbolTable فارغ + flaskVariables فارغة
-        // حتى تظهر أخطاء Missing Flask Variable / Undefined variable
+
         SymbolTable emptySymTab = new SymbolTable();
         emptySymTab.enterscope("global");
         Set<String> emptyFlaskVars = new HashSet<>();
@@ -91,9 +74,7 @@ public class SemanticErrorTestMain {
             System.out.println(BOLD + "Total Web/Jinja errors: " + webErrors.size() + RESET);
         }
 
-        // --------------------------------------------------
-        // SUMMARY
-        // --------------------------------------------------
+
         System.out.println("\n" + BOLD + CYAN + "==============================================" + RESET);
         System.out.println(BOLD + "SUMMARY" + RESET);
         System.out.println("  Python errors : " + pythonErrors.size());
@@ -102,7 +83,7 @@ public class SemanticErrorTestMain {
         System.out.println(BOLD + CYAN + "==============================================" + RESET);
     }
 
-    // ==================== Python ====================
+
     private static List<String> runPythonSemantic(String filePath) throws Exception {
         CharStream input = CharStreams.fromFileName(filePath);
         pythonLexer lexer = new pythonLexer(input);
@@ -122,13 +103,13 @@ public class SemanticErrorTestMain {
 
         List<String> errors = visitor.getSemanticErrors();
         if (errors == null) {
-            // fallback إذا النسخة القديمة ما فيها getSemanticErrors
+
             errors = new ArrayList<>();
         }
         return new ArrayList<>(errors);
     }
 
-    // ==================== Web / Jinja ====================
+
     private static List<String> runWebSemantic(String filePath,
                                                SymbolTable symTab,
                                                Set<String> flaskVariables) throws Exception {

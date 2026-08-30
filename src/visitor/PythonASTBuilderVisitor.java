@@ -454,7 +454,7 @@ public ASTNode visitComparisonCondition(pythonParser.ComparisonConditionContext 
         insideFunctionCall = false;
         if (function != null) {
             node.setFunctionTarget(function);
-            System.out.println("FUNCTION NODE = " + function.getClass().getSimpleName()); // <--- السطر المضاف
+            System.out.println("FUNCTION NODE = " + function.getClass().getSimpleName());
         }
 
         if (function instanceof VariableNode varNode) {
@@ -465,7 +465,7 @@ public ASTNode visitComparisonCondition(pythonParser.ComparisonConditionContext 
                         ASTNode argNode = visit(argCtx);
                         if (argNode instanceof KeywordArgNode kw) {
                             flaskVariables.add(kw.getName());
-                            System.out.println("Flask Variable Found: " + kw.getName()); // <--- السطر المضاف
+                            System.out.println("Flask Variable Found: " + kw.getName());
                         }
                     }
                 }

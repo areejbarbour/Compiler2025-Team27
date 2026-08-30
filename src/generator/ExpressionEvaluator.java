@@ -4,11 +4,10 @@ import java.util.*;
 
 public class ExpressionEvaluator {
 
-    // الـ scope الحالي (متغيرات الـ for + set + بيانات الـ template)
+
     private Map<String, Object> scope = new HashMap<>();
 
-    // جدول الراوتات (endpoint -> مسار) المستخرج من @app.route(...) بكود Python
-    // مطلوب لحل استدعاءات url_for('endpoint', key=value, ...)
+
     private Map<String, String> routes = new HashMap<>();
 
     public void setScope(Map<String, Object> scope) {
@@ -31,12 +30,7 @@ public class ExpressionEvaluator {
         return scope;
     }
 
-    /**
-     * يقيّم تعبير بسيط مثل:
-     *   product
-     *   product.name
-     *   product.price
-     */
+
     public Object evaluate(String expression) {
         if (expression == null || expression.trim().isEmpty()) {
             return null;
@@ -44,27 +38,27 @@ public class ExpressionEvaluator {
 
         expression = expression.trim();
 
-        // دعم استدعاء url_for('endpoint', key=value, ...) لتوليد الروابط
+
         if (expression.startsWith("url_for(") && expression.endsWith(")")) {
             return evaluateUrlFor(expression);
         }
 
-        // إزالة أقواس بسيطة إن وجدت: total()
+
         if (expression.endsWith("()") && !expression.contains(".")) {
             expression = expression.substring(0, expression.length() - 2);
         }
 
-        // تقسيم حسب النقطة: product.name → ["product", "name"]
+
         String[] parts = expression.split("\\.");
 
         Object current = scope.get(parts[0]);
 
-        // إذا ما لقينا بالمتغيرات المحلية، نرجع null
+
         if (current == null) {
             return null;
         }
 
-        // نمشي على باقي الأجزاء (product.name.price ...)
+
         for (int i = 1; i < parts.length; i++) {
             if (current instanceof Map) {
                 current = ((Map<?, ?>) current).get(parts[i]);
@@ -76,10 +70,7 @@ public class ExpressionEvaluator {
         return current;
     }
 
-    /**
-     * يقيّم شرط بسيط (لـ {% if %})
-     * يدعم حالياً: وجود القيمة / مقارنات بسيطة لاحقاً
-     */
+
     public boolean evaluateCondition(String expression) {
         Object value = evaluate(expression);
         if (value == null) return false;
@@ -90,22 +81,13 @@ public class ExpressionEvaluator {
         return true;
     }
 
-    /**
-     * يحوّل أي قيمة إلى نص للطباعة في HTML
-     */
+
     public String toHtmlString(Object value) {
         if (value == null) return "";
         return value.toString();
     }
 
-    // ==================== دعم url_for(...) ====================
 
-    /**
-     * يحل استدعاء مثل:
-     *   url_for('static', filename='style.css')
-     *   url_for('product_details', product_name=product.name)
-     * اعتمادًا على جدول الراوتات المستخرج من @app.route(...) بكود Python.
-     */
     private Object evaluateUrlFor(String expression) {
         String inner = expression.substring("url_for(".length(), expression.length() - 1);
         List<String> args = splitArgs(inner);
@@ -124,15 +106,14 @@ public class ExpressionEvaluator {
             kwargs.put(key, value != null ? value.toString() : "");
         }
 
-        // ملف ثابت (static/style.css) → بيرجع مسار نسبي لأن الملفات المولدة
-        // وملفات الدعم (style.css) بتنكتب بنفس مجلد الخرج
+
         if ("static".equals(endpoint)) {
             return kwargs.getOrDefault("filename", "");
         }
 
         String pattern = routes.get(endpoint);
         if (pattern == null) {
-            // endpoint مش معروف بجدول الراوتات، ما منقدر نبني رابط له
+
             return "#";
         }
 
@@ -148,7 +129,7 @@ public class ExpressionEvaluator {
         if ((v.startsWith("'") && v.endsWith("'")) || (v.startsWith("\"") && v.endsWith("\""))) {
             return stripQuotes(v);
         }
-        // متغير أو تعبير نقطي متل product.name → نستخدم نفس منطق evaluate العادي
+
         return evaluate(v);
     }
 
@@ -160,10 +141,7 @@ public class ExpressionEvaluator {
         return s;
     }
 
-    /**
-     * يقسّم محتوى بين قوسين حسب الفواصل بمستوى القوس الأول فقط،
-     * مع تجاهل الفواصل الموجودة جوا نصوص أو أقواس متداخلة.
-     */
+
     private List<String> splitArgs(String s) {
         List<String> result = new ArrayList<>();
         int depth = 0;

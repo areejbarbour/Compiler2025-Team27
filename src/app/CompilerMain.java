@@ -23,33 +23,19 @@ import java.util.Map;
 
 import static org.antlr.v4.runtime.CharStreams.fromFileName;
 
-/**
- * المترجم الرئيسي — مطابق لـ:
- * - إعلان مشروع المترجمات 2025/2026
- * - رسالة الدكتورة (Code Generation: Input/Output)
- * - الملف المساعد (التحويلات الدلالية عبر HtmlGenerator)
- *
- * سياسة معالجة الأخطاء الدلالية (متفق عليها):
- * 1) يتم تشغيل الـ Semantic Analysis بالكامل (Python + Web/Jinja) دون توقف عند أول خطأ.
- * 2) تُكتب كل الأخطاء المُجمَّعة إلى compiler_output/semantic_report.txt دائماً.
- * 3) إذا وُجد أي خطأ دلالي (Python أو Web) => يتوقف التوليد بالكامل، ولا تُنتَج
- *    ملفات output/ (لا HTML ولا نسخ للملفات الداعمة)، ويُسجَّل السبب في generation_log.txt.
- * 4) فقط إذا كانت قائمة الأخطاء فاضية بالكامل => تُنفَّذ مرحلة الـ Generation الحقيقية.
- */
+
 public class CompilerMain {
 
     public static void main(String[] args) throws Exception {
 
         OutputWriter writer = new OutputWriter();
-        writer.prepareDirectories(); // ننشئ output/ و compiler_output/ من البداية
+        writer.prepareDirectories();
 
-        // =====================================================
-        // 1) PYTHON ANALYSIS  (ملف الدخل: app.py)
-        // =====================================================
+
         System.out.println("===== PYTHON ANALYSIS =====");
 
        String pythonFile = "example/semantic_errors_python.py";
-//        String pythonFile = "app.py";
+
 
         CharStream pythonInput = CharStreams.fromFileName(pythonFile);
 
@@ -75,7 +61,7 @@ public class CompilerMain {
         System.out.println(pyTree.toStringTree(pyParser));
 
         if (pyParser.getNumberOfSyntaxErrors() != 0) {
-            // خطأ نحوي: لا يمكن بناء AST سليم => توقف فوري (لا يوجد بديل هنا كما بالمترجمات الحقيقية)
+
             System.err.println("\nPython Syntax Errors Found.");
             writer.writeSyntaxErrorReport("Python", "Number of syntax errors: " + pyParser.getNumberOfSyntaxErrors());
             writer.logGenerationAbortedSyntax("Python");
@@ -99,15 +85,10 @@ public class CompilerMain {
 
         System.out.println("\n===== Python Semantic Errors =====");
         pythonVisitor.printsemanticErrors();
-        // ملاحظة: ما منعمل return هون. منجمع الأخطاء ومنكمل لتحليل الـ Web
-        // عشان نطبع كل الأخطاء (Python + Web) دفعة وحدة بالتقرير النهائي.
 
-        // نكتب ast_python.json دائماً، لأن الـ AST اتبنى بنجاح بغض النظر عن الأخطاء الدلالية
         writer.writePythonAstJson(pythonAST);
 
-        // =====================================================
-        // 2) WEB / JINJA ANALYSIS  (ملفات الدخل: templates/*.jinja)
-        // =====================================================
+
         System.out.println("\n===== WEB ANALYSIS =====");
 
         String htmlFile = "templates/index.jinja";
@@ -138,7 +119,7 @@ public class CompilerMain {
         List<String> webErrors = new ArrayList<>();
 
         if (webParser.getNumberOfSyntaxErrors() != 0) {
-            // نفس منطق الـ Python: خطأ نحوي بالـ Jinja يمنع بناء AST سليم => توقف فوري
+
             System.err.println("\nWeb Syntax Errors Found.");
             writer.writeSyntaxErrorReport("Web/Jinja", "Number of syntax errors: " + webParser.getNumberOfSyntaxErrors());
             writer.logGenerationAbortedSyntax("Web/Jinja");
@@ -161,20 +142,16 @@ public class CompilerMain {
         webVisitor.printSemanticErrors();
         webErrors = webVisitor.getSemanticErrors();
 
-        // نكتب ast_jinja.json دائماً أيضاً، بنفس منطق ast_python.json
+
         writer.writeJinjaAstJson(webAST);
 
-        // =====================================================
-        // 3) SEMANTIC REPORT — تُكتب دائماً بغض النظر عن النتيجة
-        // =====================================================
+
         List<String> pythonErrors = pythonVisitor.getSemanticErrors();
         writer.writeSemanticReport(pythonErrors, webErrors);
 
         int totalErrors = pythonErrors.size() + webErrors.size();
 
-        // =====================================================
-        // 4) الـ GATE: قرار المتابعة للتوليد أو التوقف
-        // =====================================================
+
         if (totalErrors > 0) {
             System.err.println("\n Semantic Errors Found (" + totalErrors + ") — Code Generation Aborted.");
             System.err.println("See compiler_output/semantic_report.txt for details.");
@@ -182,29 +159,23 @@ public class CompilerMain {
             writer.writeGenerationLog();
             System.out.println("\n===== DONE (ABORTED) =====");
             System.out.println("Check compiler_output/ for semantic_report.txt and generation_log.txt");
-            return; // لا يوجد أي إنتاج لملفات output/ إطلاقاً، ولا تشغيل للسيرفر
+            return;
         }
 
-        // =====================================================
-        // 5) EXTRACT DATA (Phase 6) — Context من Python AST
-        //    (ما بتنفّذ إلا إذا ما في ولا خطأ دلالي واحد)
-        // =====================================================
+
         DataExtractor extractor = new DataExtractor();
         Context context = extractor.extract(pythonAST);
 
         System.out.println("\n===== EXTRACTED DATA (Phase 6) =====");
         context.print();
 
-        // =====================================================
-        // 6) CODE GENERATION (Phase 7)
-        // Python data → Jinja AST → HTML
-        // =====================================================
+
         System.out.println("\n===== CODE GENERATION (Phase 7) =====");
 
         HtmlGenerator generator = new HtmlGenerator();
         generator.setRoutes(context.getAllRoutes());
 
-        // --- index.html (من index.jinja) ---
+
         Map<String, Object> indexData = new java.util.HashMap<>(context.getDataForTemplate("index.jinja"));
         if (!indexData.containsKey("products_list")) {
             Object products = context.getGlobalVariable("products");
@@ -222,7 +193,7 @@ public class CompilerMain {
         System.out.println("\n===== GENERATED: index.html =====");
         System.out.println(indexHtml);
 
-        // --- add_product.jinja ---
+
         String addProductHtml = generateTemplate(
                 "templates/add_product.jinja",
                 context.getDataForTemplate("add_product.jinja"),
@@ -232,7 +203,7 @@ public class CompilerMain {
         System.out.println("\n===== GENERATED: add_product.jinja =====");
         System.out.println(addProductHtml);
 
-        // --- edit_product.jinja (عينة: أول منتج) ---
+
         Map<String, Object> editData = new java.util.HashMap<>();
         Object productsList = context.getGlobalVariable("products");
         if (productsList instanceof java.util.List && !((java.util.List<?>) productsList).isEmpty()) {
@@ -247,7 +218,7 @@ public class CompilerMain {
         System.out.println("\n===== GENERATED: edit_product.jinja =====");
         System.out.println(editHtml);
 
-        // --- product_details.jinja ---
+
         Map<String, Object> detailsData = new java.util.HashMap<>();
         if (productsList instanceof java.util.List && !((java.util.List<?>) productsList).isEmpty()) {
             detailsData.put("product", ((java.util.List<?>) productsList).get(0));
@@ -261,9 +232,7 @@ public class CompilerMain {
         System.out.println("\n===== GENERATED: product_details.jinja =====");
         System.out.println(detailsHtml);
 
-        // =====================================================
-        // 7) WRITE OUTPUT FILES (Phase 8)
-        // =====================================================
+
         System.out.println("\n===== WRITING OUTPUT FILES (Phase 8) =====");
 
         writer.writeGeneratedHtml("index.html", indexHtml);
@@ -283,14 +252,12 @@ public class CompilerMain {
         System.out.println("Generated: index.html, add_product.html, edit_product.html, product_details.html");
         System.out.println("Copied support files: app.py, style.css");
 
-        // ==================== تشغيل السيرفر (Runtime Regeneration) ====================
+
         System.out.println("\n===== STARTING RUNTIME SERVER (Java) =====");
         AppServer.main(new String[]{ pythonFile });
     }
 
-    /**
-     * تحليل قالب Jinja واحد وتوليد HTML منه مع البيانات الممرَّرة.
-     */
+
     private static String generateTemplate(
             String templatePath,
             Map<String, Object> data,

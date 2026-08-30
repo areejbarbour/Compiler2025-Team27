@@ -10,40 +10,37 @@ public class HtmlGenerator {
     private final StringBuilder output = new StringBuilder();
     private Map<String, String> routes = new HashMap<>();
 
-    /**
-     * جدول التحويلات الدلالية (الملف المساعد للدكتورة):
-     * class دلالي → خصائص CSS تُحقن كـ style inline
-     */
+
     private static final Map<String, String> SEMANTIC_STYLES = new LinkedHashMap<>();
     static {
-        // 1. Container
+
         SEMANTIC_STYLES.put("container-box",
                 "width: 100%; max-width: 500px; padding: 15px; background: #ffffff;");
-        // 2. Row (ترتيب أفقي)
+
         SEMANTIC_STYLES.put("row-layout",
                 "display: flex; flex-direction: row; align-items: center; gap: 10px;");
-        // 3. Column (ترتيب عمودي)
+
         SEMANTIC_STYLES.put("column-layout",
                 "display: flex; flex-direction: column; gap: 12px;");
-        // 10. Scaffold — الهيكل يُعالج في renderHtmlElement عند الحاجة
+
         SEMANTIC_STYLES.put("scaffold-app",
                 "min-height: 100vh; display: flex; flex-direction: column;");
-        // 11. AppBar
+
         SEMANTIC_STYLES.put("app-bar",
                 "background: #1976d2; color: #ffffff; padding: 12px 20px; font-size: 1.2em;");
-        // 12. Padding / الهوامش
+
         SEMANTIC_STYLES.put("pad-10",
                 "padding: 10px; margin: 10px;");
-        // 13. SizedBox / فراغات
+
         SEMANTIC_STYLES.put("spacer-h20",
                 "height: 20px;");
-        // 15. Card
+
         SEMANTIC_STYLES.put("ui-card",
                 "box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 16px; background: #fff;");
-        // 16. ListTile
+
         SEMANTIC_STYLES.put("list-tile",
                 "display: flex; align-items: center; gap: 12px; padding: 8px 0;");
-        // كلاسات شائعة من مشروع المنتجات (اختيارية لكن مفيدة)
+
         SEMANTIC_STYLES.put("container",
                 "width: 100%; max-width: 960px; margin: 0 auto; padding: 20px;");
         SEMANTIC_STYLES.put("product-card",
@@ -87,7 +84,7 @@ public class HtmlGenerator {
         return output.toString();
     }
 
-    // ==================== المحرك الرئيسي ====================
+
     private void render(WebASTNode node) {
         if (node == null) return;
 
@@ -138,10 +135,9 @@ public class HtmlGenerator {
         }
     }
 
-    // ==================== HTML Elements ====================
+
     private void renderHtmlElement(HtmlElementNode el) {
-        // 10. Scaffold: إذا كان العنصر يحمل scaffold-app نضمن وجود هيكل صفحة أساسي
-        // (في حال القالب لا يحتوي DOCTYPE مسبقاً — غالباً موجود فلا نكرر)
+
         output.append("<").append(el.getTagName());
         renderAttributes(el);
         output.append(">");
@@ -165,16 +161,11 @@ public class HtmlGenerator {
         output.append(">");
     }
 
-    /**
-     * رسم الخصائص مع تطبيق التحويلات الدلالية من الملف المساعد:
-     * - class دلالي → حقن style inline
-     * - clickable + data-target → onclick
-     * - حل {{ }} داخل قيم الخصائص
-     */
+
     private void renderAttributes(HtmlNode el) {
         if (el.getAttributes() == null) return;
 
-        // نجمع الخصائص أولاً حتى ندمج style ونعالج Gesture
+
         Map<String, String> attrs = new LinkedHashMap<>();
         String classValue = null;
         String dataTarget = null;
@@ -195,7 +186,7 @@ public class HtmlGenerator {
             }
         }
 
-        // ---- تحويل كلاسات دلالية → style (الملف المساعد) ----
+
         String injectedStyle = buildSemanticStyle(classValue);
         if (injectedStyle != null && !injectedStyle.isEmpty()) {
             String existing = attrs.getOrDefault("style", "");
@@ -205,9 +196,9 @@ public class HtmlGenerator {
             attrs.put("style", existing + injectedStyle);
         }
 
-        // ---- 14. Gesture / clickable → onclick ----
+
         if (classValue != null && containsClass(classValue, "clickable") && dataTarget != null) {
-            // إن لم يكن هناك onclick مسبقاً نحقنه
+
             if (!attrs.containsKey("onclick")) {
                 String href = dataTarget.startsWith("/") || dataTarget.startsWith("http")
                         ? dataTarget
@@ -218,7 +209,7 @@ public class HtmlGenerator {
             }
         }
 
-        // كتابة الخصائص النهائية
+
         for (Map.Entry<String, String> entry : attrs.entrySet()) {
             output.append(" ")
                     .append(entry.getKey())
@@ -228,9 +219,7 @@ public class HtmlGenerator {
         }
     }
 
-    /**
-     * يبني سلسلة style من كل الكلاسات الدلالية الموجودة في قيمة class
-     */
+
     private String buildSemanticStyle(String classValue) {
         if (classValue == null || classValue.isBlank()) return null;
 
@@ -279,7 +268,7 @@ public class HtmlGenerator {
         return result.toString();
     }
 
-    // ==================== Jinja For ====================
+
     private void renderFor(JinjaForNode forNode) {
         String loopVar = forNode.variables.isEmpty() ? "item" : forNode.variables.get(0);
         Object iterableValue = resolveIterable(forNode);
@@ -312,7 +301,7 @@ public class HtmlGenerator {
         return evaluator.evaluate(forNode.iterable.toString());
     }
 
-    // ==================== Jinja If ====================
+
     private void renderIf(JinjaIfNode ifNode) {
         boolean conditionMet = false;
 
@@ -355,7 +344,7 @@ public class HtmlGenerator {
         return node != null ? node.toString() : "";
     }
 
-    // ==================== Jinja Set ====================
+
     private void renderSet(JinjaSetNode setNode) {
         Object value = null;
         if (setNode.value instanceof JinjaExprNode expr) {

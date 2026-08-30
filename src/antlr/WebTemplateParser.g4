@@ -2,13 +2,13 @@ parser grammar WebTemplateParser;
 
 options { tokenVocab = WebTemplateLexer; }
 
-/* =========================   ROOT   ========================= */
+
 
 document
     : element* EOF                   # DocumentRoot
     ;
 
-/* =========================   ELEMENTS   ========================= */
+
 
 element
     : htmlElement                    # ElementHtml
@@ -17,7 +17,7 @@ element
     | textNode                       # ElementText
     ;
 
-/* =========================   HTML   ========================= */
+
 
 htmlElement
     : htmlVoidTag                    # HtmlElementVoid
@@ -52,7 +52,7 @@ attrValue
     | ATTR_VALUE_UNQUOTED                  # AttrValueUnquoted
     ;
 
-/* =========================   CSS   ========================= */
+
 
 cssBlock
     : STYLE_OPEN styleAttribute* STYLE_TAG_END (cssRule | mediaRule)* CSS_CLOSE    # CssBlockWithContent
@@ -130,7 +130,7 @@ cssValue
     | CSS_BANG          # CssValueImportant
     ;
 
-/* =========================   JINJA   ========================= */
+
 
 jinjaBlock
     : jinjaIf           # JinjaBlockIf
@@ -185,7 +185,7 @@ jinjaComment
     : JINJA_COMMENT_START JINJA_COMMENT_TEXT* JINJA_COMMENT_END    # JinjaCommentFull
     ;
 
-/* =========================   EXPRESSIONS   ========================= */
+
 
 expr
     : orExpr   # ExprRoot
@@ -262,7 +262,7 @@ exprList
     : argument ((JINJA_COMMA | JSTMT_COMMA) argument)*   # ExprListFull
     ;
 
-/* =========================   TEXT   ========================= */
+
 
 textNode
     : HTML_TEXT+   # TextNodeFull

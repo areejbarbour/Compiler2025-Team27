@@ -28,29 +28,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-/**
- * سيرفر Java مضمّن (embedded) — بديل عن سكربت Flask/Python المكتوب يدوياً.
- * <p>
- * هون فعلياً "الجافا هي يلي بتستمع للمتغيرات وبتعمل regeneration":
- * كل طلب add/edit/delete بيوصل لهاد السيرفر، بيعدّل بيانات المنتجات بالذاكرة،
- * وبعدين بينادي HtmlGenerator.generate(...) من جديد (نفس محرك التوليد
- * المستخدم بمرحلة الـ compile-time بـ CompilerMain) لإعادة توليد HTML
- * بحيث يتزامن الخرج مع البيانات مباشرة — بدون أي كود Python وسيط.
- */
+
 public class AppServer {
 
     private static final int PORT = 8080;
     private static final Path OUTPUT_DIR = Paths.get("output");
 
-    // ==== حالة التشغيل (Runtime state) ====
+
     private final List<Map<String, Object>> products = Collections.synchronizedList(new ArrayList<>());
     private final Object generationLock = new Object();
 
     private HtmlGenerator generator;
     private Context context;
 
-    // AST المُحلَّلة مسبقاً لكل قالب Jinja (تُبنى مرة وحدة، وتُعاد استخدامها
-    // مع بيانات جديدة كل مرة عند التوليد)
+
     private WebASTNode indexAst;
     private WebASTNode addProductAst;
     private WebASTNode editProductAst;
@@ -66,14 +57,11 @@ public class AppServer {
         server.start();
     }
 
-    /**
-     * تحليل app.py (Phase 6: DataExtractor) + تحليل قوالب Jinja مرة واحدة عند الإقلاع.
-     */
+
     private void bootstrap(String pythonFile) throws Exception {
         System.out.println("===== [Java]  + pythonFile + واستخراج البيانات الأولية =====");
 
-      //  String pythonFile = "app.py";
-      //  String pythonFile = "example/semantic_errors_python.py";
+
         CharStream pythonInput = CharStreams.fromFileName(pythonFile);
         pythonLexer pyLexer = new pythonLexer(pythonInput);
         CommonTokenStream pyTokens = new CommonTokenStream(pyLexer);
@@ -90,7 +78,7 @@ public class AppServer {
         DataExtractor extractor = new DataExtractor();
         context = extractor.extract(pythonAST);
 
-        // نحمّل قائمة المنتجات الابتدائية بالذاكرة (Runtime state) من الـ Context المستخرج
+
         Object initialProducts = context.getGlobalVariable("products");
         if (initialProducts instanceof List<?> list) {
             for (Object o : list) {
@@ -114,7 +102,7 @@ public class AppServer {
 
         Files.createDirectories(OUTPUT_DIR);
 
-        // أول توليد (Initial regeneration) قبل استقبال أي طلب
+
         regenerateIndex();
 
         System.out.println("===== [Java] جاهز — " + products.size() + " منتج محمّل بالذاكرة =====");
@@ -146,9 +134,7 @@ public class AppServer {
         System.out.println("===== [Java] السيرفر شغال على http://localhost:" + PORT + " =====");
     }
 
-    // ==================== التوليد (Regeneration) ====================
-    // هاي هي النقطة المركزية: كل تعديل على products بينادي هاد المسار،
-    // وهو يعيد تشغيل HtmlGenerator.generate() فعلياً (نفس محرك مرحلة التوليد).
+
     private String regenerateIndex() {
         synchronized (generationLock) {
             Map<String, Object> data = new HashMap<>();
@@ -202,7 +188,7 @@ public class AppServer {
         return null;
     }
 
-    // ==================== الراوتر (Router) ====================
+
     private class RouterHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -247,7 +233,7 @@ public class AppServer {
                 newProduct.put("details", form.get("details"));
                 newProduct.put("image", form.get("image"));
                 products.add(newProduct);
-                regenerateIndex(); // <-- الجافا بتستمع للتغيير وبتعيد التوليد فوراً
+                regenerateIndex();
                 redirect(exchange, "/products");
             } else {
                 respondHtml(exchange, renderAddProductForm());
@@ -265,7 +251,7 @@ public class AppServer {
                 updated.put("image", form.get("image"));
                 if (found != null) products.remove(found);
                 products.add(updated);
-                regenerateIndex(); // <-- نفس الشي هون: تعديل → تستمع الجافا → تعيد التوليد
+                regenerateIndex();
                 redirect(exchange, "/products");
             } else {
                 respondHtml(exchange, renderEditProductForm(found));

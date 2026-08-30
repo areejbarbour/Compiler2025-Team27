@@ -15,9 +15,7 @@ public class DictType extends Type {
         this.valueType = valueType;
     }
 
-    // ==========================
-    // Getters
-    // ==========================
+
 
     public Type getKeyType() {
         return keyType;
@@ -27,7 +25,7 @@ public class DictType extends Type {
         return valueType;
     }
 
-    // إذا احتجت تعديلهم لاحقاً
+
     public void setKeyType(Type keyType) {
         this.keyType = keyType;
     }

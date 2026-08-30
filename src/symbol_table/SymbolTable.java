@@ -10,9 +10,9 @@ public class SymbolTable {
 
     public SymbolTable()
     {
-        enterscope("builtins");   // 👈 scope خاص للـ built-in symbols
+        enterscope("builtins");
 
-        // built-in values
+
         insert("__name__", SymbolEntry.SymbolKind.VARIABLE);
         insert("print", SymbolEntry.SymbolKind.FUNCTION);
 
